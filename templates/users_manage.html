@@ -1,25 +1,20 @@
 {% extends "base.html" %}
 
-{% block title %}إدارة المنتجات (قطاعي وجملة){% endblock %}
+{% block title %}إدارة المستخدمين والصلاحيات{% endblock %}
 
 {% block content %}
-    <div id="toast-message" class="fixed top-5 left-1/2 transform -translate-x-1/2 z-50 hidden transition-all duration-300 px-6 py-3 rounded-2xl shadow-xl font-bold text-sm text-white"></div>
-
-    <!-- المحتوى الرئيسي بعرض الشاشة الكامل وبداية متناسقة من اليمين -->
     <main class="w-full px-6 py-6 space-y-6 flex-1 overflow-y-auto">
-        
-        <!-- الهيدر العلوي مع زر الـ 3 شرط بالشكل السليم -->
+        <!-- الهيدر العلوي -->
         <div class="flex justify-between items-center bg-white p-5 rounded-2xl border border-amber-100 shadow-lg">
             <div class="flex items-center gap-4">
-                <!-- زر الـ 3 شرط الموحد -->
                 <button onclick="toggleSidebar()" class="bg-amber-100 hover:bg-amber-200 text-amber-900 p-2.5 rounded-xl transition shadow-sm flex flex-col justify-between w-10 h-10 items-center justify-center shrink-0 cursor-pointer">
                     <span class="w-5 h-0.5 bg-amber-900 rounded-full block"></span>
                     <span class="w-5 h-0.5 bg-amber-900 rounded-full block"></span>
                     <span class="w-5 h-0.5 bg-amber-900 rounded-full block"></span>
                 </button>
                 <div>
-                    <h1 class="text-lg font-black text-amber-900">إدارة المنتجات والتصنيفات (قطاعي وجملة)</h1>
-                    <p class="text-xs text-gray-500">صفحة كاملة لإدارة أصناف الفرن، الأسعار، والمخزون</p>
+                    <h1 class="text-lg font-black text-amber-900">إدارة المستخدمين والصلاحيات</h1>
+                    <p class="text-xs text-gray-500">إضافة مستخدمين جدد وتحديد صلاحياتهم على النظام</p>
                 </div>
             </div>
             <a href="/" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs transition shadow cursor-pointer">
@@ -27,130 +22,95 @@
             </a>
         </div>
 
-        <!-- إضافة منتج جديد -->
-        <div class="bg-white p-5 rounded-2xl border border-amber-100 shadow-lg space-y-3">
-            <h3 class="font-bold text-amber-900 text-xs border-b pb-2">➕ إضافة منتج جديد</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3">
-                <input type="text" id="new-name" placeholder="اسم المنتج" class="border bg-white p-2.5 rounded-xl text-xs font-bold outline-none focus:border-amber-500">
-                <input type="number" id="new-price" placeholder="سعر القطاعي" class="border bg-white p-2.5 rounded-xl text-xs font-bold outline-none focus:border-amber-500">
-                <input type="number" id="new-wholesale" placeholder="سعر الجملة" class="border bg-white p-2.5 rounded-xl text-xs font-bold outline-none focus:border-amber-500">
-                <input type="number" id="new-stock" placeholder="المخزن" value="100" class="border bg-white p-2.5 rounded-xl text-xs font-bold outline-none focus:border-amber-500">
-                <select id="new-unit" class="border bg-white p-2.5 rounded-xl text-xs font-bold outline-none focus:border-amber-500">
-                    <option value="piece">Piece (قطعة)</option>
-                    <option value="kg">KG (كيلو)</option>
-                </select>
-                <button onclick="addNewProduct()" class="bg-amber-600 hover:bg-amber-700 text-white p-2.5 rounded-xl text-xs font-bold shadow cursor-pointer">إضافة الصنف</button>
-            </div>
-        </div>
+        <!-- نموذج إضافة مستخدم جديد -->
+        <div class="bg-white p-5 rounded-2xl border border-amber-100 shadow-lg space-y-4">
+            <h3 class="font-bold text-amber-900 text-xs border-b pb-2">➕ إضافة مستخدم جديد</h3>
+            <form method="POST" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <input type="text" name="username" placeholder="اسم المستخدم" required class="border bg-white p-2.5 rounded-xl text-xs font-bold outline-none focus:border-amber-500">
+                    <input type="password" name="password" placeholder="كلمة المرور" required class="border bg-white p-2.5 rounded-xl text-xs font-bold outline-none focus:border-amber-500">
+                    <select name="role" id="role-select" onchange="togglePermissions()" class="border bg-white p-2.5 rounded-xl text-xs font-bold outline-none focus:border-amber-500">
+                        <option value="cashier">كاشير (عادي)</option>
+                        <option value="admin">مدير (Admin - كل الصلاحيات)</option>
+                    </select>
+                </div>
 
-        <!-- قائمة المنتجات الحالية وتعديلها -->
-        <div class="bg-white p-5 rounded-2xl border border-amber-100 shadow-lg space-y-3">
-            <h3 class="font-bold text-gray-700 text-xs border-b pb-2">📋 المنتجات الحالية وتعديل الأسعار والمخزن</h3>
-            
-            <!-- رؤوس الأعمدة -->
-            <div class="grid grid-cols-12 gap-2 px-3 py-2 bg-gray-100 rounded-xl text-xs font-bold text-gray-600">
-                <div class="col-span-3">الاسم</div>
-                <div class="col-span-2 text-center">سعر القطاعي</div>
-                <div class="col-span-2 text-center">سعر الجملة</div>
-                <div class="col-span-2 text-center">المخزن</div>
-                <div class="col-span-3 text-center">الإجراءات</div>
-            </div>
-
-            <!-- قائمة المنتجات -->
-            <div class="max-h-[450px] overflow-y-auto space-y-2 pr-1">
-                {% for p in products %}
-                <div class="grid grid-cols-12 gap-2 items-center bg-gray-50 p-2.5 rounded-xl border border-gray-200">
-                    <input type="text" id="name-{{ loop.index0 }}" value="{{ p.name }}" class="col-span-3 border bg-white p-2 rounded-lg text-xs font-bold text-gray-800 outline-none">
-                    <input type="number" id="price-{{ loop.index0 }}" value="{{ p.price }}" class="col-span-2 border bg-white p-2 rounded-lg text-center text-amber-700 font-bold text-xs outline-none">
-                    <input type="number" id="wholesale-{{ loop.index0 }}" value="{{ p.wholesale_price }}" class="col-span-2 border bg-white p-2 rounded-lg text-center text-blue-700 font-bold text-xs outline-none">
-                    <input type="number" id="stock-{{ loop.index0 }}" value="{{ p.stock }}" class="col-span-2 border bg-white p-2 rounded-lg text-center text-gray-700 font-bold text-xs outline-none">
-                    
-                    <div class="col-span-3 flex items-center justify-center gap-2">
-                        <button onclick="updateProduct('{{ p.name }}', {{ loop.index0 }})" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer shadow-sm">تعديل</button>
-                        <button onclick="deleteProduct('{{ p.name }}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer shadow-sm">حذف</button>
+                <!-- تحديد الصلاحيات -->
+                <div id="permissions-container" class="space-y-2 pt-2 border-t">
+                    <label class="block text-xs font-bold text-gray-700">الصلاحيات المتاحة:</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-bold text-gray-600">
+                        <label class="flex items-center gap-2 cursor-pointer bg-gray-50 p-2.5 rounded-xl border">
+                            <input type="checkbox" name="permissions" value="reports" class="accent-amber-600"> تقارير المبيعات
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer bg-gray-50 p-2.5 rounded-xl border">
+                            <input type="checkbox" name="permissions" value="expenses" class="accent-amber-600"> المصروفات العامة
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer bg-gray-50 p-2.5 rounded-xl border">
+                            <input type="checkbox" name="permissions" value="products" class="accent-amber-600"> إدارة المنتجات
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer bg-gray-50 p-2.5 rounded-xl border">
+                            <input type="checkbox" name="permissions" value="raw_inventory" class="accent-amber-600"> إدارة المخزون والخامات
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer bg-gray-50 p-2.5 rounded-xl border">
+                            <input type="checkbox" name="permissions" value="driver" class="accent-amber-600"> عربيات التوزيع
+                        </label>
                     </div>
                 </div>
-                {% endfor %}
-            </div>
+
+                <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white px-6 py-2.5 rounded-xl text-xs font-bold shadow cursor-pointer">حفظ وإضافة المستخدم</button>
+            </form>
         </div>
 
+        <!-- قائمة المستخدمين الحاليين -->
+        <div class="bg-white p-5 rounded-2xl border border-amber-100 shadow-lg space-y-3">
+            <h3 class="font-bold text-gray-700 text-xs border-b pb-2">📋 المستخدمون المسجلون في النظام</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-right text-xs">
+                    <thead>
+                        <tr class="bg-gray-100 text-gray-600">
+                            <th class="p-3 rounded-r-xl">اسم المستخدم</th>
+                            <th class="p-3">الدور (Role)</th>
+                            <th class="p-3">الصلاحيات</th>
+                            <th class="p-3 rounded-l-xl text-center">الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        {% for user in users %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="p-3 font-bold text-gray-800">{{ user[1] }}</td>
+                            <td class="p-3">
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold {{ 'bg-purple-100 text-purple-700' if user[2] == 'admin' else 'bg-blue-100 text-blue-700' }}">
+                                    {{ 'مدير النظام' if user[2] == 'admin' else 'كاشير' }}
+                                </span>
+                            </td>
+                            <td class="p-3 text-gray-500">{{ user[3] if user[3] else 'لا توجد صلاحيات مخصصة' }}</td>
+                            <td class="p-3 text-center">
+                                {% if user[1] != 'admin' %}
+                                <form action="{{ url_for('user_delete', id=user[0]) }}" method="POST" class="inline" onsubmit="return confirm('هل أنت متأكد من حذف هذا المستخدم؟');">
+                                    <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs font-bold cursor-pointer">حذف</button>
+                                </form>
+                                {% else %}
+                                <span class="text-gray-400 text-[10px]">محمي</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </main>
 {% endblock %}
 
 {% block extra_js %}
     <script>
-        function showToast(message, type = 'error') {
-            let toast = document.getElementById('toast-message');
-            toast.innerText = message;
-            toast.className = `fixed top-5 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-300 px-6 py-3 rounded-2xl shadow-xl font-bold text-sm text-white ${type === 'error' ? 'bg-red-600' : 'bg-emerald-600'}`;
-            toast.classList.remove('hidden');
-            setTimeout(() => toast.classList.add('hidden'), 3500);
-        }
-
-        function addNewProduct() {
-            let name = document.getElementById('new-name').value;
-            let price = document.getElementById('new-price').value;
-            let wholesale_price = document.getElementById('new-wholesale').value || 0;
-            let stock = document.getElementById('new-stock').value || 100;
-            let unit = document.getElementById('new-unit').value;
-
-            if(!name || !price) {
-                showToast('من فضلك أدخل اسم المنتج وسعر القطاعي!');
-                return;
-            }
-
-            fetch('/add_product', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, price, wholesale_price, stock, unit, image_path: 'fino.png' })
-            }).then(res => res.json()).then(data => {
-                if(data.success) {
-                    showToast('تم إضافة المنتج بنجاح!', 'success');
-                    setTimeout(() => location.reload(), 1000);
-                } else {
-                    showToast('خطأ: ' + data.error);
-                }
-            });
-        }
-
-        function updateProduct(oldName, index) {
-            let newName = document.getElementById(`name-${index}`).value;
-            let newPrice = document.getElementById(`price-${index}`).value;
-            let wholesaleInput = document.getElementById(`wholesale-${index}`).value;
-            let newStock = document.getElementById(`stock-${index}`).value;
-
-            fetch('/update_product', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    old_name: oldName, 
-                    new_name: newName, 
-                    price: newPrice, 
-                    wholesale_price: wholesaleInput, 
-                    stock: newStock 
-                })
-            }).then(res => res.json()).then(data => {
-                if(data.success) {
-                    showToast('تم تحديث المنتج بنجاح!', 'success');
-                    setTimeout(() => location.reload(), 1000);
-                } else {
-                    showToast('خطأ: ' + data.error);
-                }
-            });
-        }
-
-        function deleteProduct(name) {
-            if(confirm(`هل أنت متأكد من حذف ${name}؟`)) {
-                fetch('/delete_product', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name })
-                }).then(res => res.json()).then(data => { 
-                    if(data.success) {
-                        showToast('تم حذف المنتج بنجاح', 'success');
-                        setTimeout(() => location.reload(), 1000);
-                    } 
-                });
+        function togglePermissions() {
+            let roleSelect = document.getElementById('role-select');
+            let permContainer = document.getElementById('permissions-container');
+            if(roleSelect.value === 'admin') {
+                permContainer.style.display = 'none';
+            } else {
+                permContainer.style.display = 'block';
             }
         }
     </script>
