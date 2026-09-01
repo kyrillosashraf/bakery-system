@@ -13,8 +13,7 @@
         /* تنسيقات التجاوب التلقائي للشاشات الصغيرة (الموبايل) لكل الصفحات */
         @media (max-width: 768px) {
             body, .main-container, .pos-layout, .container, .row {
-                flex-direction: column !important;
-                display: flex !important;
+                display: block !important;
                 width: 100% !important;
                 max-width: 100% !important;
                 margin: 0 !important;
@@ -30,7 +29,7 @@
 
             .products-grid, .menu-grid, .grid-container {
                 display: grid !important;
-                grid-template-columns: repeat(2, 1fr) !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
                 gap: 8px !important;
                 padding: 0 !important;
             }
@@ -44,8 +43,9 @@
 
             .product-card, .card {
                 width: 100% !important;
-                min-height: 110px !important;
-                margin-bottom: 5px !important;
+                height: auto !important;
+                min-height: 120px !important;
+                margin-bottom: 0 !important;
             }
         }
     </style>
