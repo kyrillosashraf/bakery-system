@@ -18,6 +18,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from functools import wraps
 import qrcode
+from werkzeug.security import generate_password_hash
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from models.db_manager import (
@@ -301,21 +302,30 @@ def users_manage():
 
   if request.method == "POST":
     username = request.form.get("username")
-    password = request.form.get("password")
+    raw_password = request.form.get("password")
     role = request.form.get("role")
     
     permissions_list = request.form.getlist("permissions")
     permissions_str = ",".join(permissions_list) if permissions_list else ""
 
-    if username and password and role:
+    if username and raw_password and role:
       try:
+        hashed_password = generate_password_hash(raw_password)
         cursor.execute(
-            "INSERT INTO users (username, password, role, permissions) VALUES (?, ?, ?, ?)",
-            (username, password, role, permissions_str),
+            """
+            INSERT INTO users (username, password, role, permissions) 
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(username) DO UPDATE SET 
+                password=excluded.password,
+                role=excluded.role,
+                permissions=excluded.permissions
+            """,
+            (username, hashed_password, role, permissions_str),
         )
         conn.commit()
       except Exception as e:
-        print("Error adding user:", e)
+        print("Error adding/updating user:", e)
+    
     conn.close()
     return redirect(url_for("users_manage"))
 
@@ -843,4 +853,3 @@ def api_get_daily_shop_invoices():
 if __name__ == "__main__":
   port = int(os.environ.get("PORT", 5000))
   app.run(host="0.0.0.0", port=port, debug=False)
-  
