@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحليلات المالية - المخبز</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- مكتبة Chart.js للرسوم البيانية -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+        body { font-family: 'Cairo', sans-serif; }
+    </style>
+</head>
+<body class="bg-[#fdf6e3] min-h-screen text-gray-800 pb-10">
+
+    <!-- الهيدر -->
+    <div class="bg-amber-700 text-white p-5 shadow-md rounded-b-3xl mb-6 flex justify-between items-center px-6">
+        <div>
+            <h1 class="text-xl font-black">📊 لوحة التحليلات والرسوم البيانية</h1>
+            <p class="text-xs text-amber-100 mt-1">تتبع تطور المبيعات، توزيع الإيرادات والمصروفات، وصافي الأرباح</p>
+        </div>
+        <a href="/reports" class="bg-white text-amber-800 px-4 py-2 rounded-xl text-xs font-bold shadow hover:bg-amber-50 transition">
+            <i class="fas fa-arrow-right ml-1"></i> رجوع للتقارير
+        </a>
+    </div>
+
+    <!-- فلاتر التواريخ -->
+    <div class="max-w-6xl mx-auto px-4 mb-6">
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-amber-100 flex flex-wrap gap-4 items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-gray-700"><i class="fas fa-calendar-alt text-amber-700 ml-1"></i> من تاريخ:</span>
+                <input type="date" id="startDate" class="border border-amber-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-amber-600">
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-gray-700">إلى تاريخ:</span>
+                <input type="date" id="endDate" class="border border-amber-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-amber-600">
+            </div>
+            <button onclick="loadAnalyticsData()" class="bg-amber-700 text-white px-6 py-2 rounded-xl text-xs font-bold shadow hover:bg-amber-800 transition cursor-pointer">
+                <i class="fas fa-sync-alt ml-1"></i> تحديث التحليلات
+            </button>
+        </div>
+    </div>
+
+    <!-- شبكة الرسوم البيانية -->
+    <div class="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- 1. تطور المبيعات عبر الزمن (Line Chart) -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-amber-100 md:col-span-2">
+            <h3 class="font-bold text-gray-800 text-sm mb-4 border-b pb-2 flex items-center">
+                <i class="fas fa-chart-line text-amber-700 ml-2"></i> تطور المبيعات والإيرادات عبر الزمن
+            </h3>
+            <div class="relative h-72 w-full">
+                <canvas id="salesLineChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 2. توزيع الإيرادات أو المصروفات (Doughnut Chart) -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-amber-100 flex flex-col justify-between">
+            <h3 class="font-bold text-gray-800 text-sm mb-4 border-b pb-2 flex items-center">
+                <i class="fas fa-chart-pie text-amber-700 ml-2"></i> توزيع المصروفات (خامات وعامة)
+            </h3>
+            <div class="relative h-64 w-full flex items-center justify-center">
+                <canvas id="expensesDoughnutChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 3. مقارنة صافي الربح والإجماليات (Bar Chart) -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-amber-100 flex flex-col justify-between">
+            <h3 class="font-bold text-gray-800 text-sm mb-4 border-b pb-2 flex items-center">
+                <i class="fas fa-balance-scale text-amber-700 ml-2"></i> مقارنة الإيرادات، المصروفات وصافي الربح
+            </h3>
+            <div class="relative h-64 w-full flex items-center justify-center">
+                <canvas id="profitBarChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let salesChart, expensesChart, profitChart;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const localDate = `${year}-${month}-${day}`;
+
+            document.getElementById('startDate').value = localDate;
+            document.getElementById('endDate').value = localDate;
+            
+            loadAnalyticsData();
+        });
+
+        async function loadAnalyticsData() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            if (!startDate || !endDate) return;
+
+            try {
+                // 1. جلب بيانات التقرير المخصص (المبيعات وخامات المواد الخام)
+                const resReport = await fetch(`/custom_report?start_date=${startDate}&end_date=${endDate}`);
+                const reportData = await resReport.json();
+
+                if (!reportData.success) return;
+                const report = reportData.report;
+
+                const retailTotal = report.retail_total || 0;
+                const trucksTotal = report.trucks_total || 0;
+                const rawExpensesTotal = report.raw_expenses_total || 0;
+                const totalIncome = retailTotal + trucksTotal;
+
+                // 2. جلب المصروفات العامة وفلترتها حسب الفترة تماماً مثل صفحة التقارير
+                const resExp = await fetch(`/get_general_expenses`);
+                const expData = await resExp.json();
+                
+                let generalExpensesTotal = 0;
+                if (expData.success && expData.expenses) {
+                    const filteredExpenses = expData.expenses.filter(exp => {
+                        let expDate = exp.date.split(' ')[0];
+                        return expDate >= startDate && expDate <= endDate;
+                    });
+                    filteredExpenses.forEach(exp => {
+                        generalExpensesTotal += Number(exp.amount);
+                    });
+                }
+
+                const totalExpenses = rawExpensesTotal + generalExpensesTotal;
+                const netProfit = totalIncome - totalExpenses;
+
+                // 3. تمرير البيانات للرسم البياني
+                renderCharts({
+                    startDate: startDate,
+                    endDate: endDate,
+                    totalIncome: totalIncome,
+                    rawExp: rawExpensesTotal,
+                    genExp: generalExpensesTotal,
+                    totalExp: totalExpenses,
+                    netProfit: netProfit
+                });
+
+            } catch (error) {
+                console.error("خطأ في جلب بيانات التحليلات:", error);
+            }
+        }
+
+        function renderCharts(data) {
+            // 1. Line Chart: تطور المبيعات
+            const ctxLine = document.getElementById('salesLineChart').getContext('2d');
+            if (salesChart) salesChart.destroy();
+            salesChart = new Chart(ctxLine, {
+                type: 'line',
+                data: {
+                    labels: [`الفترة من ${data.startDate} إلى ${data.endDate}`],
+                    datasets: [{
+                        label: 'إجمالي المبيعات (EGP)',
+                        data: [data.totalIncome],
+                        borderColor: '#b45309',
+                        backgroundColor: 'rgba(180, 83, 9, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+
+            // 2. Doughnut Chart: توزيع المصروفات
+            const ctxDoughnut = document.getElementById('expensesDoughnutChart').getContext('2d');
+            if (expensesChart) expensesChart.destroy();
+            expensesChart = new Chart(ctxDoughnut, {
+                type: 'doughnut',
+                data: {
+                    labels: ['مصروفات المواد الخام', 'المصروفات العامة'],
+                    datasets: [{
+                        data: [data.rawExp, data.genExp],
+                        backgroundColor: ['#f59e0b', '#dc2626'],
+                        borderWidth: 1
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // 3. Bar Chart: مقارنة الإجماليات وصافي الربح
+            const ctxBar = document.getElementById('profitBarChart').getContext('2d');
+            if (profitChart) profitChart.destroy();
+            profitChart = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: ['الإيرادات', 'المصروفات', 'صافي الربح'],
+                    datasets: [{
+                        label: 'المبلغ (EGP)',
+                        data: [data.totalIncome, data.totalExp, data.netProfit],
+                        backgroundColor: ['#10b981', '#ef4444', '#3b82f6'],
+                        borderWidth: 1
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

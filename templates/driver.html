@@ -1,0 +1,681 @@
+{% extends "base.html" %}
+
+{% block title %}إدارة التوزيع والعربيات{% endblock %}
+
+{% block content %}
+    <!-- شريط علوي خاص بالصفحة -->
+    <header class="bg-white border-b border-amber-100 shadow-xs px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <button onclick="toggleSidebar()" class="bg-amber-100 hover:bg-amber-200 text-amber-900 p-2.5 rounded-xl transition shadow-sm flex flex-col justify-between w-10 h-10 items-center justify-center shrink-0 cursor-pointer">
+                <span class="w-5 h-0.5 bg-amber-900 rounded-full block"></span>
+                <span class="w-5 h-0.5 bg-amber-900 rounded-full block"></span>
+                <span class="w-5 h-0.5 bg-amber-900 rounded-full block"></span>
+            </button>
+            <span class="text-2xl">🚚</span>
+            <div>
+                <h1 class="text-sm font-black text-amber-900">نظام إدارة التوزيع والعربيات</h1>
+                <p class="text-[11px] text-gray-400">تتبع العهدة والمحلات والمندوب</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-y-auto flex-1">
+        
+        <!-- القسم الأيمن: اختيار العربية والمحلات والتحميل -->
+        <div class="lg:col-span-2 space-y-6">
+            
+            <!-- اختيار العربية -->
+            <div class="bg-white p-5 rounded-2xl border border-amber-100 shadow-sm space-y-4">
+                <label class="block text-xs font-bold text-amber-900">العربية النشطة لتوزيع البضاعة:</label>
+                <select id="selected-truck" onchange="loadTruckInventoryData()" class="w-full bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    <option value="">-- اختر العربية --</option>
+                    {% for t in trucks %}
+                    <option value="{{ t.id }}" {% if 'سوزوكي' in t.name or 'فكتور' in t.name or 'فكتور' in t.driver_name %}selected{% endif %}>
+                        {{ t.name }} (السائق: {{ t.driver_name }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- زرار تقرير مبيعات وحسابات المحلات اليومية -->
+            <div class="bg-white p-4 rounded-2xl border border-amber-100 shadow-sm">
+                <button onclick="openDailyReportModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-3 rounded-xl transition shadow flex items-center justify-center gap-2 cursor-pointer">
+                    <span>📊</span> تقرير مبيعات وحسابات المحلات اليومية
+                </button>
+            </div>
+
+            <!-- قائمة المحلات المتاحة للتوزيع -->
+            <div class="bg-white p-5 rounded-2xl border border-amber-100 shadow-sm">
+                <h3 class="text-xs font-bold text-amber-900 mb-4 flex items-center gap-2">
+                    <span>🏪</span> اختر المحل لتسجيل البضاعة المأخوذة:
+                </h3>
+                <div id="stores-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {% for store in stores %}
+                    <div class="border border-amber-100 bg-amber-50/30 p-4 rounded-xl flex justify-between items-center hover:border-amber-300 transition">
+                        <div>
+                            <h4 class="font-bold text-xs text-gray-800">{{ store[1] }}</h4>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="openStoreSaleModal('{{ store[0] }}', '{{ store[1] }}')" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition shadow-xs flex items-center gap-1 cursor-pointer">
+                                <span>🛒</span> بيع 
+                            </button>
+                            <button onclick="openStoreAccountModal('{{ store[0] }}', '{{ store[1] }}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition shadow-xs flex items-center gap-1 cursor-pointer">
+                                <span>💰</span> حساب
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+
+        <!-- القسم الأيسر: عهدة العربية الحالية + إضافة محل جديد -->
+        <div class="space-y-6">
+            
+            <!-- عهدة العربية الحالية -->
+            <div class="bg-white p-5 rounded-2xl border border-amber-100 shadow-sm flex flex-col h-[420px]">
+                <div class="flex justify-between items-center mb-4 border-b pb-2">
+                    <h3 class="text-xs font-bold text-amber-900 flex items-center gap-2">
+                        <span>📦</span> عهدة العربية الحالية
+                    </h3>
+                    <div class="flex gap-1.5">
+                        <button onclick="openLoadTruckModal()" class="bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition shadow-xs cursor-pointer">
+                            + تحميل
+                        </button>
+                        <button onclick="openReturnToWarehouseModal()" class="bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition shadow-xs cursor-pointer">
+                            ↩️ إرجاع للمخزن
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="truck-inventory-list" class="overflow-y-auto space-y-2 flex-1">
+                    <p class="text-xs text-gray-400 text-center py-20">جاري تحميل عهدة العربية...</p>
+                </div>
+            </div>
+
+            <!-- إضافة محل جديد -->
+            <div class="bg-white p-5 rounded-2xl border border-amber-100 shadow-sm space-y-3">
+                <h3 class="text-xs font-bold text-amber-900 flex items-center gap-2">
+                    <span>➕</span> إضافة محل جديد للتوزيع
+                </h3>
+                <input type="text" id="new-shop-name" placeholder="اسم المحل" class="w-full bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs focus:outline-none">
+                <button onclick="addNewShop()" class="w-full bg-gray-900 hover:bg-black text-white text-xs font-bold py-3 rounded-xl transition shadow cursor-pointer">
+                    حفظ وإضافة المحل
+                </button>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- نافذة تحميل عهدة بضاعة للعربية -->
+    <div id="loadTruckModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-6 w-[700px] shadow-2xl border border-amber-200 relative" dir="rtl">
+            <button onclick="closeLoadTruckModal()" class="absolute top-4 left-4 text-gray-400 hover:text-gray-600 text-xl font-bold cursor-pointer">&times;</button>
+            <h3 class="text-sm font-bold text-amber-900 mb-6 text-left border-b pb-3">تحميل عهدة بضاعة للعربية</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-2">اختر المنتج (اضغط لإضافته للقائمة):</label>
+                    <div id="warehouse-products-list" class="border border-amber-200 rounded-xl p-2 h-[260px] overflow-y-auto space-y-2 bg-amber-50/20">
+                        {% for p in warehouse_products %}
+                        <div onclick="addSelectedProductToLoad('{{ p.name }}', {{ p.stock }}, '{{ p.unit or 'قطعة' }}')" 
+                             class="border border-amber-200 bg-white hover:bg-amber-50 p-2.5 rounded-xl flex justify-between items-center cursor-pointer transition shadow-2xs">
+                            <span class="font-bold text-xs text-gray-800">{{ p.name }}</span>
+                            <span class="bg-amber-100 text-amber-900 text-[11px] font-black px-2 py-1 rounded-lg">المخزن: {{ p.stock }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-2">المنتجات المراد تحميلها:</label>
+                    <div id="selected-load-items" class="border border-gray-200 rounded-xl p-3 h-[260px] overflow-y-auto space-y-2 bg-gray-50/50 flex flex-col justify-center items-center text-gray-400 text-xs">
+                        لم يتم اختيار منتجات بعد
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6 pt-4 border-t">
+                <button onclick="closeLoadTruckModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold py-3 rounded-xl transition cursor-pointer">إلغاء</button>
+                <button onclick="submitLoadTruckBulk()" class="flex-1 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold py-3 rounded-xl transition shadow cursor-pointer">تأكيد وتحميل الكل</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة إرجاع البضاعة من العربية إلى المخزن الرئيسي -->
+    <div id="returnToWarehouseModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-6 w-[550px] shadow-2xl border border-rose-200 max-h-[85vh] flex flex-col" dir="rtl">
+            <div class="flex justify-between items-center mb-3 border-b pb-2">
+                <h3 class="text-sm font-bold text-rose-900">↩️ إرجاع البضاعة المتبقية من العربية إلى مخزن الفرن</h3>
+                <button onclick="closeReturnToWarehouseModal()" class="text-gray-400 hover:text-red-500 text-xl font-bold cursor-pointer">&times;</button>
+            </div>
+            <p class="text-[11px] text-gray-500 mb-3">حدد الكميات المراد إرجاعها من عهدة العربية للمخزن الرئيسي:</p>
+            <div id="return-items-container" class="overflow-y-auto space-y-3 flex-1 p-1"></div>
+            <div class="flex gap-2 mt-4 pt-3 border-t">
+                <button onclick="submitReturnToWarehouse()" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold py-2.5 rounded-xl transition cursor-pointer">تأكيد الإرجاع للمخزن</button>
+                <button onclick="closeReturnToWarehouseModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs font-bold py-2.5 rounded-xl transition cursor-pointer">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة تسجيل فاتورة / بيع لمحل -->
+    <div id="storeSaleModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-6 w-[550px] shadow-2xl border border-amber-200 max-h-[85vh] flex flex-col" dir="rtl">
+            <h3 id="modal-store-title" class="text-sm font-bold text-amber-900 mb-3 border-b pb-2">تسجيل فاتورة للمحل</h3>
+            <div id="store-items-container" class="overflow-y-auto space-y-3 flex-1 p-1"></div>
+            <div class="border-t pt-3 mt-3 flex justify-between items-center">
+                <span class="text-xs font-bold text-gray-600">إجمالي الفاتورة:</span>
+                <span id="store-cart-total" class="text-base font-black text-amber-700">0.00 EGP</span>
+            </div>
+            <div class="flex gap-2 mt-4">
+                <button onclick="submitStoreSale()" class="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2.5 rounded-xl transition cursor-pointer">إتمام البيع وخصم العربية</button>
+                <button onclick="closeStoreSaleModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs font-bold py-2.5 rounded-xl transition cursor-pointer">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة تقرير فواتير المحلات اليومية -->
+    <div id="dailyReportModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-6 w-[750px] shadow-2xl border border-amber-200 max-h-[80vh] flex flex-col" dir="rtl">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 class="text-base font-bold text-gray-800">تقرير حسابات وفواتير المحلات اليومية</h3>
+                <button onclick="closeDailyReportModal()" class="text-gray-400 hover:text-red-500 text-xl font-bold cursor-pointer">&times;</button>
+            </div>
+            <div id="daily-invoices-container" class="overflow-y-auto space-y-3 flex-1 p-1"></div>
+            <div class="border-t pt-3 mt-3 flex justify-between items-center">
+                <span class="text-xs font-bold text-gray-600">إجمالي مبيعات المحلات اليوم:</span>
+                <span id="daily-grand-total" class="text-base font-black text-amber-700">0.00 EGP</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة حساب المحل المخصص -->
+    <div id="storeAccountModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-6 w-[650px] shadow-2xl border border-amber-200 max-h-[80vh] flex flex-col" dir="rtl">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 id="modal-account-title" class="text-base font-bold text-gray-800">حساب المحل</h3>
+                <button onclick="closeStoreAccountModal()" class="text-gray-400 hover:text-red-500 text-xl font-bold cursor-pointer">&times;</button>
+            </div>
+            <div id="store-account-container" class="overflow-y-auto space-y-3 flex-1 p-1"></div>
+            <div class="border-t pt-3 mt-3 flex justify-between items-center">
+                <span class="text-xs font-bold text-gray-600">إجمالي حساب المحل اليوم:</span>
+                <span id="store-account-grand-total" class="text-base font-black text-amber-700">0.00 EGP</span>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        let currentTruckInventory = {};
+        let activeStoreId = null;
+        let activeStoreName = null;
+        let selectedLoadItemsMap = {};
+
+        window.onload = function() {
+            loadTruckInventoryData();
+        };
+
+        function loadTruckInventoryData() {
+            let truckId = document.getElementById('selected-truck').value;
+            let container = document.getElementById('truck-inventory-list');
+            
+            if (!truckId) {
+                container.innerHTML = `<p class="text-xs text-gray-400 text-center py-20">اختر العربية لعرض عهدتها الحالية</p>`;
+                currentTruckInventory = {};
+                return;
+            }
+
+            fetch(`/get_truck_inventory/${truckId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    currentTruckInventory = data.inventory;
+                    container.innerHTML = '';
+                    
+                    if (Object.keys(currentTruckInventory).length === 0) {
+                        container.innerHTML = `<p class="text-xs text-gray-400 text-center py-20">لا توجد بضاعة مسجلة في عهدة هذه العربية حالياً</p>`;
+                        return;
+                    }
+
+                    for (let pName in currentTruckInventory) {
+                        let item = currentTruckInventory[pName];
+                        container.innerHTML += `
+                            <div class="bg-amber-50/50 border border-amber-100 p-3 rounded-xl flex justify-between items-center">
+                                <div>
+                                    <h4 class="font-bold text-xs text-gray-800">${pName}</h4>
+                                    <p class="text-[10px] text-gray-500">سعر الجملة: ${item.price} EGP | الوحدة: ${item.unit || 'قطعة'}</p>
+                                </div>
+                                <span class="bg-amber-600 text-white text-xs font-black px-2.5 py-1 rounded-lg">
+                                    ${item.qty} ${item.unit || ''}
+                                </span>
+                            </div>
+                        `;
+                    }
+                }
+            });
+        }
+
+        function openLoadTruckModal() {
+            let truckId = document.getElementById('selected-truck').value;
+            if (!truckId) {
+                showToast('يرجى اختيار العربية أولاً!', 'error');
+                return;
+            }
+            selectedLoadItemsMap = {};
+            renderSelectedLoadItems();
+            document.getElementById('loadTruckModal').classList.remove('hidden');
+        }
+
+        function closeLoadTruckModal() {
+            document.getElementById('loadTruckModal').classList.add('hidden');
+        }
+
+        function addSelectedProductToLoad(name, stock, unit) {
+            if (!selectedLoadItemsMap[name]) {
+                selectedLoadItemsMap[name] = { stock: stock, unit: unit, qty: 1 };
+            } else {
+                selectedLoadItemsMap[name].qty += 1;
+            }
+            renderSelectedLoadItems();
+        }
+
+        function updateLoadItemQty(name, qty) {
+            let val = parseInt(qty) || 0;
+            if (selectedLoadItemsMap[name]) {
+                if (val > 0) {
+                    selectedLoadItemsMap[name].qty = val;
+                } else {
+                    selectedLoadItemsMap[name].qty = 1;
+                }
+            }
+        }
+
+        function removeLoadItem(name) {
+            delete selectedLoadItemsMap[name];
+            renderSelectedLoadItems();
+        }
+
+        function renderSelectedLoadItems() {
+            let container = document.getElementById('selected-load-items');
+            container.innerHTML = '';
+            
+            let keys = Object.keys(selectedLoadItemsMap);
+            if (keys.length === 0) {
+                container.className = "border border-gray-200 rounded-xl p-3 h-[260px] overflow-y-auto space-y-2 bg-gray-50/50 flex flex-col justify-center items-center text-gray-400 text-xs";
+                container.innerHTML = "لم يتم اختيار منتجات بعد";
+                return;
+            }
+
+            container.className = "border border-gray-200 rounded-xl p-3 h-[260px] overflow-y-auto space-y-2 bg-gray-50/50 flex flex-col justify-start items-stretch";
+            
+            keys.forEach(name => {
+                let item = selectedLoadItemsMap[name];
+                container.innerHTML += `
+                    <div class="bg-white border border-amber-200 p-2.5 rounded-xl flex justify-between items-center shadow-2xs gap-2">
+                        <button onclick="removeLoadItem('${name}')" class="bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 font-bold w-7 h-7 rounded-lg flex items-center justify-center transition cursor-pointer shrink-0" title="حذف المنتج">&times;</button>
+                        <span class="font-bold text-xs text-gray-800 flex-1 text-right">${name}</span>
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <span class="text-[10px] text-gray-400">${item.unit}</span>
+                            <input type="number" min="1" max="${item.stock}" value="${item.qty}" 
+                                   oninput="updateLoadItemQty('${name}', this.value)"
+                                   class="w-16 bg-amber-50 border border-amber-300 rounded-lg p-1 text-center text-xs font-bold focus:outline-none focus:ring-1 focus:ring-amber-500">
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function submitLoadTruckBulk() {
+            let truckId = document.getElementById('selected-truck').value;
+            let containerInputs = document.querySelectorAll('#selected-load-items input[type="number"]');
+            containerInputs.forEach(input => {
+                let card = input.closest('div.bg-white');
+                let nameSpan = card.querySelector('span.flex-1');
+                if (nameSpan) {
+                    let name = nameSpan.innerText;
+                    let val = parseInt(input.value) || 1;
+                    if (selectedLoadItemsMap[name]) {
+                        selectedLoadItemsMap[name].qty = val;
+                    }
+                }
+            });
+
+            let keys = Object.keys(selectedLoadItemsMap);
+            if (keys.length === 0) {
+                showToast('يرجى اختيار منتج واحد على الأقل للتحميل!', 'error');
+                return;
+            }
+
+            let promises = keys.map(name => {
+                let item = selectedLoadItemsMap[name];
+                return fetch('/load_truck', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({truck_id: truckId, product_id: name, qty: item.qty})
+                }).then(res => res.json());
+            });
+
+            Promise.all(promises).then(results => {
+                closeLoadTruckModal();
+                loadTruckInventoryData();
+                showToast('تم تحميل البضاعة بنجاح لعهدة العربية!', 'success');
+            }).catch(err => {
+                showToast('حدث خطأ أثناء تحميل بعض المنتجات', 'error');
+            });
+        }
+
+        function openReturnToWarehouseModal() {
+            let truckId = document.getElementById('selected-truck').value;
+            if (!truckId) {
+                showToast('يرجى اختيار العربية أولاً!', 'error');
+                return;
+            }
+            if (Object.keys(currentTruckInventory).length === 0) {
+                showToast('عفواً، عهدة هذه العربية فارغة ولا توجد بضاعة لإرجاعها!', 'error');
+                return;
+            }
+
+            let container = document.getElementById('return-items-container');
+            container.innerHTML = '';
+
+            for (let pName in currentTruckInventory) {
+                let item = currentTruckInventory[pName];
+                container.innerHTML += `
+                    <div class="bg-rose-50/40 border border-rose-200 p-3 rounded-xl flex justify-between items-center">
+                        <div>
+                            <h4 class="font-bold text-xs text-gray-800">${pName}</h4>
+                            <p class="text-[10px] text-gray-500">المتاح بالعربية: ${item.qty} ${item.unit || ''}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="number" min="0" max="${item.qty}" value="0" step="1" 
+                                   data-product="${pName}" 
+                                   class="return-item-qty w-16 bg-white border border-rose-300 rounded-lg p-1.5 text-center text-xs font-bold">
+                            <span class="text-xs text-gray-500">${item.unit || ''}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('returnToWarehouseModal').classList.remove('hidden');
+        }
+
+        function closeReturnToWarehouseModal() {
+            document.getElementById('returnToWarehouseModal').classList.add('hidden');
+        }
+
+        function submitReturnToWarehouse() {
+            let truckId = document.getElementById('selected-truck').value;
+            let inputs = document.querySelectorAll('.return-item-qty');
+            let itemsToReturn = [];
+
+            inputs.forEach(input => {
+                let qty = parseFloat(input.value) || 0;
+                if (qty > 0) {
+                    let pName = input.getAttribute('data-product');
+                    itemsToReturn.push({ product_name: pName, qty: qty });
+                }
+            });
+
+            if (itemsToReturn.length === 0) {
+                showToast('يرجى تحديد كمية منتج واحد على الأقل للإرجاع للمخزن!', 'error');
+                return;
+            }
+
+            let promises = itemsToReturn.map(item => {
+                return fetch('/return_to_warehouse', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        truck_id: truckId,
+                        product_name: item.product_name,
+                        qty: item.qty
+                    })
+                }).then(res => res.json());
+            });
+
+            Promise.all(promises).then(results => {
+                let hasError = results.find(r => !r.success);
+                if (hasError) {
+                    showToast('خطأ: ' + hasError.error, 'error');
+                } else {
+                    showToast('تم إرجاع البضاعة المحددة بنجاح إلى مخزن الفرن الرئيسي!', 'success');
+                    closeReturnToWarehouseModal();
+                    loadTruckInventoryData();
+                }
+            }).catch(err => {
+                showToast('حدث خطأ أثناء عملية الإرجاع', 'error');
+            });
+        }
+
+        function openStoreSaleModal(storeId, storeName) {
+            let truckId = document.getElementById('selected-truck').value;
+            if (!truckId) {
+                showToast('يرجى اختيار العربية أولاً لكي يتم الخصم من عهدتها!', 'error');
+                return;
+            }
+
+            if (Object.keys(currentTruckInventory).length === 0) {
+                showToast('عفواً، عهدة هذه العربية فارغة تماماً ولا توجد بضاعة لتوزيعها!', 'error');
+                return;
+            }
+
+            activeStoreId = storeId;
+            activeStoreName = storeName;
+            document.getElementById('modal-store-title').innerText = `تسجيل مبيعات وفاتورة للمحل: ${storeName}`;
+
+            let container = document.getElementById('store-items-container');
+            container.innerHTML = '';
+
+            for (let pName in currentTruckInventory) {
+                let item = currentTruckInventory[pName];
+                container.innerHTML += `
+                    <div class="bg-amber-50/40 border border-amber-200 p-3 rounded-xl flex justify-between items-center">
+                        <div>
+                            <h4 class="font-bold text-xs text-gray-800">${pName}</h4>
+                            <p class="text-[10px] text-gray-500">المتاح بالعربية: ${item.qty} | سعر الجملة: ${item.price} EGP</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="number" min="0" max="${item.qty}" value="0" step="1" 
+                                   data-product="${pName}" data-price="${item.price}" data-unit="${item.unit || ''}"
+                                   oninput="calculateStoreCartTotal()" 
+                                   class="store-item-qty w-16 bg-white border border-amber-300 rounded-lg p-1.5 text-center text-xs font-bold">
+                            <span class="text-xs text-gray-500">${item.unit || ''}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            calculateStoreCartTotal();
+            document.getElementById('storeSaleModal').classList.remove('hidden');
+        }
+
+        function closeStoreSaleModal() {
+            document.getElementById('storeSaleModal').classList.add('hidden');
+        }
+
+        function calculateStoreCartTotal() {
+            let inputs = document.querySelectorAll('.store-item-qty');
+            let total = 0;
+            inputs.forEach(input => {
+                let qty = parseFloat(input.value) || 0;
+                let price = parseFloat(input.getAttribute('data-price')) || 0;
+                total += (qty * price);
+            });
+            document.getElementById('store-cart-total').innerText = total.toFixed(2) + ' EGP';
+        }
+
+        function submitStoreSale() {
+            let truckId = document.getElementById('selected-truck').value;
+            let inputs = document.querySelectorAll('.store-item-qty');
+            let items = {};
+
+            inputs.forEach(input => {
+                let qty = parseFloat(input.value) || 0;
+                if (qty > 0) {
+                    let pName = input.getAttribute('data-product');
+                    let price = parseFloat(input.getAttribute('data-price'));
+                    let unit = input.getAttribute('data-unit');
+                    items[pName] = { qty: qty, price: price, unit: unit };
+                }
+            });
+
+            if (Object.keys(items).length === 0) {
+                showToast('يرجى تحديد كمية منتج واحد على الأقل للبيع!', 'error');
+                return;
+            }
+
+            fetch('/process_store_sale', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    truck_id: truckId,
+                    store_id: activeStoreId,
+                    store_name: activeStoreName,
+                    items: items
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    closeStoreSaleModal();
+                    loadTruckInventoryData();
+                } else {
+                    showToast(data.error, 'error');
+                }
+            });
+        }
+
+        function addNewShop() {
+            let name = document.getElementById('new-shop-name').value;
+            if (!name) {
+                showToast('اسم المحل مطلوب!', 'error');
+                return;
+            }
+
+            fetch('/add_shop', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name: name, phone: "", address: ""})
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('تم إضافة المحل بنجاح', 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast(data.error, 'error');
+                }
+            });
+        }
+
+        function openDailyReportModal() {
+            fetch('/get_daily_shop_invoices')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    let container = document.getElementById('daily-invoices-container');
+                    container.innerHTML = '';
+                    let grandTotal = 0;
+
+                    if (data.invoices.length === 0) {
+                        container.innerHTML = `<p class="text-xs text-gray-400 text-center py-10">لا توجد مبيعات مسجلة للمحلات اليوم</p>`;
+                        document.getElementById('daily-grand-total').innerText = '0.00 EGP';
+                        document.getElementById('dailyReportModal').classList.remove('hidden');
+                        return;
+                    }
+
+                    data.invoices.forEach(inv => {
+                        grandTotal += inv.total_amount;
+                        let itemsHtml = '';
+                        for (let pName in inv.items) {
+                            let item = inv.items[pName];
+                            itemsHtml += `<li class="text-[11px] text-gray-600 flex justify-between"><span>${pName} (${item.qty} ${item.unit || ''})</span> <span class="font-bold">${(item.qty * item.price).toFixed(2)} EGP</span></li>`;
+                        }
+
+                        container.innerHTML += `
+                            <div class="bg-amber-50/50 border border-amber-200 p-3 rounded-xl">
+                                <div class="flex justify-between items-center mb-2 border-b border-amber-100 pb-1">
+                                    <div>
+                                        <span class="font-extrabold text-xs text-amber-900 ml-2">🏪 محل: ${inv.store_name}</span>
+                                        <span class="bg-amber-200 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-md">🚚 العربية: ${inv.truck_name || 'غير محددة'}</span>
+                                    </div>
+                                    <span class="text-[10px] text-gray-400">${inv.date}</span>
+                                </div>
+                                <ul class="space-y-1 mb-2 bg-white p-2 rounded-lg border">${itemsHtml}</ul>
+                                <div class="flex justify-between items-center text-xs font-bold">
+                                    <span class="text-gray-700">إجمالي حساب المحل اليوم:</span>
+                                    <span class="text-amber-700 text-sm">${inv.total_amount.toFixed(2)} EGP</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    document.getElementById('daily-grand-total').innerText = grandTotal.toFixed(2) + ' EGP';
+                    document.getElementById('dailyReportModal').classList.remove('hidden');
+                } else {
+                    showToast(data.error, 'error');
+                }
+            });
+        }
+
+        function closeDailyReportModal() {
+            document.getElementById('dailyReportModal').classList.add('hidden');
+        }
+
+        function openStoreAccountModal(storeId, storeName) {
+            document.getElementById('modal-account-title').innerText = `حساب المحل اليوم: ${storeName}`;
+            
+            fetch('/get_daily_shop_invoices')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    let container = document.getElementById('store-account-container');
+                    container.innerHTML = '';
+                    let storeGrandTotal = 0;
+                    
+                    let storeInvoices = data.invoices.filter(inv => String(inv.store_name).trim() === String(storeName).trim());
+
+                    if (storeInvoices.length === 0) {
+                        container.innerHTML = `<p class="text-xs text-gray-400 text-center py-10">لا توجد مبيعات أو فواتير مسجلة لهذا المحل اليوم</p>`;
+                        document.getElementById('store-account-grand-total').innerText = '0.00 EGP';
+                        document.getElementById('storeAccountModal').classList.remove('hidden');
+                        return;
+                    }
+
+                    storeInvoices.forEach(inv => {
+                        storeGrandTotal += inv.total_amount;
+                        let itemsHtml = '';
+                        for (let pName in inv.items) {
+                            let item = inv.items[pName];
+                            itemsHtml += `<li class="text-[11px] text-gray-600 flex justify-between"><span>${pName} (${item.qty} ${item.unit || ''})</span> <span class="font-bold">${(item.qty * item.price).toFixed(2)} EGP</span></li>`;
+                        }
+
+                        container.innerHTML += `
+                            <div class="bg-amber-50/50 border border-amber-200 p-3 rounded-xl">
+                                <div class="flex justify-between items-center mb-2 border-b border-amber-100 pb-1">
+                                    <span class="bg-amber-200 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-md">🚚 العربية: ${inv.truck_name || 'غير محددة'}</span>
+                                    <span class="text-[10px] text-gray-400">${inv.date}</span>
+                                </div>
+                                <ul class="space-y-1 mb-2 bg-white p-2 rounded-lg border">${itemsHtml}</ul>
+                                <div class="flex justify-between items-center text-xs font-bold">
+                                    <span class="text-gray-700">إجمالي الحساب من هذه العربية:</span>
+                                    <span class="text-amber-700 text-sm">${inv.total_amount.toFixed(2)} EGP</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    document.getElementById('store-account-grand-total').innerText = storeGrandTotal.toFixed(2) + ' EGP';
+                    document.getElementById('storeAccountModal').classList.add('flex');
+                    document.getElementById('storeAccountModal').classList.remove('hidden');
+                } else {
+                    showToast(data.error, 'error');
+                }
+            });
+        }
+
+        function closeStoreAccountModal() {
+            document.getElementById('storeAccountModal').classList.add('hidden');
+        }
+    </script>
+{% endblock %}

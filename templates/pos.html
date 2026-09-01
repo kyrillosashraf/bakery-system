@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+
+{% block title %}Bakery - نظام الكاشير{% endblock %}
+
+{% block content %}
+<div class="h-screen overflow-hidden flex items-center justify-center p-3" dir="ltr">
+
+    <div class="flex w-full h-[calc(100vh-24px)] gap-3">
+        
+        <!-- لوحة الفاتورة (على اليمين) -->
+        <div class="w-3/12 bg-white rounded-2xl shadow-lg p-4 flex flex-col justify-between border border-amber-100 h-full">
+            <div>
+                <div class="flex items-center justify-end gap-3 bg-white p-2 mb-3 border-b border-amber-100 pb-3" dir="rtl">
+                    <div class="overflow-hidden text-right">
+                        <h1 class="text-xs font-extrabold text-gray-800 truncate">AL HURIYA BAKERY SYSTEM</h1>
+                        <p class="text-[9px] text-amber-800 font-semibold truncate">نظام المخبز والمبيعات</p>
+                    </div>
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="w-12 h-12 rounded-full object-cover shrink-0 shadow-sm">
+                </div>
+
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-sm font-bold text-gray-800">Current Order</h2>
+                </div>
+                
+                <div class="overflow-y-auto max-h-[calc(100vh-260px)]">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-[#f9e7b9] text-gray-800 text-[11px]">
+                                <th class="p-2 rounded-l-lg">Item</th>
+                                <th class="p-2 text-center">Qty</th>
+                                <th class="p-2 text-center">Price</th>
+                                <th class="p-2 text-right rounded-r-lg">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cart-body" class="text-gray-700 text-[11px]"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div>
+                <div class="bg-gray-100 p-2.5 rounded-xl flex justify-between items-center mb-2.5 border">
+                    <span class="text-xs font-bold text-gray-700">Total:</span>
+                    <span id="grand-total" class="text-base font-bold text-amber-700">0.00 EGP</span>
+                </div>
+
+                <div class="flex gap-2">
+                    <button onclick="clearCart()" class="w-1/2 bg-red-400 hover:bg-red-500 text-white font-bold py-2 rounded-xl transition shadow text-xs cursor-pointer">Clear Sale</button>
+                    <button onclick="checkout()" class="w-1/2 bg-emerald-400 hover:bg-emerald-500 text-gray-900 font-bold py-2 rounded-xl transition shadow text-xs cursor-pointer">Process Payment</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- لوحة المنتجات (على اليسار) -->
+        <div class="w-9/12 bg-white rounded-2xl shadow-lg p-4 flex flex-col border border-amber-100 h-full">
+            <div class="flex justify-between items-center mb-3">
+                <div class="flex items-center gap-3">
+                    <h2 class="text-xl font-bold text-gray-800">Product Menu</h2>
+                    
+                    <!-- عرض اسم المستخدم الحقيقي وصلاحيته -->
+                    <div class="flex items-center gap-2 bg-amber-50/80 border border-amber-200 px-3 py-1.5 rounded-2xl shadow-xs">
+                        <div class="w-7 h-7 rounded-full bg-amber-200 flex items-center justify-center font-bold text-amber-900 text-xs overflow-hidden border border-amber-300">
+                            👤
+                        </div>
+                        <div class="text-right" dir="ltr">
+                            <span class="text-[11px] font-black text-amber-950 block">
+                                {{ session.get('user_role', 'cashier') | capitalize }}: {{ session.get('username', 'User') }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <div id="live-clock" class="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1.5 rounded-xl border"></div>
+                    
+                    <button onclick="toggleSidebar()" class="bg-[#fcecc4] hover:bg-[#f5dfb1] text-amber-950 p-2 rounded-xl transition shadow-sm flex flex-col justify-center gap-1.5 w-10 h-10 items-center shrink-0 cursor-pointer border border-amber-200">
+                        <span class="w-5 h-0.5 bg-[#5c3a21] rounded-full block"></span>
+                        <span class="w-5 h-0.5 bg-[#5c3a21] rounded-full block"></span>
+                        <span class="w-5 h-0.5 bg-[#5c3a21] rounded-full block"></span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex gap-2 mb-3 overflow-x-auto pb-1" dir="rtl">
+                <button onclick="filterCategory('all', this)" class="category-btn bg-[#4A3525] text-white px-4 py-2 rounded-xl text-xs font-bold shadow transition shrink-0 cursor-pointer">All الكل</button>
+                <button onclick="filterCategory('bread', this)" class="category-btn bg-white hover:bg-amber-50 text-gray-700 border border-gray-200 px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition shrink-0 cursor-pointer">Bread عيش</button>
+                <button onclick="filterCategory('pastries', this)" class="category-btn bg-white hover:bg-amber-50 text-gray-700 border border-gray-200 px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition shrink-0 cursor-pointer">Pastries حلويات</button>
+                <button onclick="filterCategory('nawashef', this)" class="category-btn bg-white hover:bg-amber-50 text-gray-700 border border-gray-200 px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition shrink-0 cursor-pointer">نواشف</button>
+            </div>
+            
+            <!-- شبكة المنتجات -->
+            <div id="menu-grid" class="grid grid-cols-7 gap-3 overflow-y-auto p-1.5 h-[calc(100vh-150px)]" dir="rtl">
+                {% for p in products %}
+                <div data-category="{{ p.category }}" onclick='handleProductClick({{ p.name|tojson }}, {{ p.price|tojson }}, {{ p.unit|tojson }}, {{ p.stock|tojson }})' class="product-card bg-white hover:bg-amber-50 cursor-pointer rounded-2xl p-3 flex flex-col items-center justify-between text-center shadow-sm border border-gray-100 transition hover:scale-105 h-48 relative overflow-hidden">
+                    
+                    {% if p.stock <= 0 %}
+                    <div class="absolute top-0 inset-x-0 bg-red-500 text-white text-[10px] font-bold py-0.5">نفذت الكمية</div>
+                    {% endif %}
+
+                    <img src="{{ url_for('static', filename='images/' + p.image_path) }}" alt="{{ p.name }}" class="w-16 h-16 object-contain mb-1 {% if p.stock <= 0 %}opacity-40 grayscale{% endif %}">
+                    
+                    <div class="flex gap-1.5 items-center">
+                        <span class="bg-[#f3d17c] text-[10px] text-gray-800 px-2 py-0.5 rounded-md font-semibold">
+                            {{ 'قطعة' if p.unit == 'piece' else 'كيلو' }}
+                        </span>
+                        
+                        <span class="text-[10px] px-2 py-0.5 rounded-md font-bold border 
+                            {% if p.stock <= 0 %}
+                                bg-red-50 text-red-700 border-red-200
+                            {% elif p.stock < 5 %}
+                                bg-orange-50 text-orange-700 border-orange-200 animate-pulse
+                            {% else %}
+                                bg-blue-50 text-blue-700 border-blue-200
+                            {% endif %}">
+                            {{ p.stock }}
+                        </span>
+                    </div>
+
+                    <span class="font-bold text-gray-800 text-sm truncate w-full">{{ p.name }}</span>
+                    <span class="text-amber-700 font-bold text-sm">{{ p.price }} EGP</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة إدخال الكمية أو الوزن -->
+    <div id="inputModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-6 w-[400px] shadow-2xl border border-amber-200 text-center" dir="rtl">
+            <h3 id="input-modal-title" class="text-xl font-bold text-gray-800 mb-2">أدخل الكمية المطلوبة</h3>
+            <p id="input-modal-desc" class="text-sm text-gray-500 mb-4">اكتب القيمة المطلوبة</p>
+            
+            <input type="number" id="custom-input" step="1" value="1" onkeydown="handleKey(event)" class="border-2 border-amber-400 p-3 rounded-xl w-full text-center text-xl font-bold text-amber-700 focus:outline-none mb-6">
+            
+            <div class="flex gap-3">
+                <button onclick="closeInputModal()" class="w-1/2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 rounded-xl transition cursor-pointer">إلغاء</button>
+                <button onclick="confirmInput()" class="w-1/2 bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 rounded-xl transition shadow cursor-pointer">إضافة للفاتورة</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let cart = {};
+    let currentProduct = null;
+
+    function updateClock() {
+        let now = new Date();
+        let dateStr = now.toLocaleDateString('en-CA');
+        let timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        let clockEl = document.getElementById('live-clock');
+        if (clockEl) {
+            clockEl.innerText = `Date ${dateStr} ${timeStr}`;
+        }
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    function handleKey(event) {
+        if (event.key === 'Enter') confirmInput();
+    }
+
+    function filterCategory(category, btn) {
+        document.querySelectorAll('.category-btn').forEach(b => {
+            b.className = "category-btn bg-white hover:bg-amber-50 text-gray-700 border border-gray-200 px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition shrink-0 cursor-pointer";
+        });
+        btn.className = "category-btn bg-[#4A3525] text-white px-4 py-2 rounded-xl text-xs font-bold shadow transition shrink-0 cursor-pointer";
+
+        document.querySelectorAll('.product-card').forEach(card => {
+            let cardCat = card.getAttribute('data-category');
+            card.style.display = (category === 'all' || cardCat === category) ? "flex" : "none";
+        });
+    }
+
+    function handleProductClick(name, price, unit, stock) {
+        if (stock <= 0) {
+            showToast(`عذراً، منتج (${name}) نفذ تماماً من المخزن!`, 'error');
+            return;
+        }
+
+        currentProduct = { name, price, unit, stock };
+        let inputField = document.getElementById('custom-input');
+        
+        if (unit === 'kg') {
+            document.getElementById('input-modal-title').innerText = `أدخل الوزن لـ (${name})`;
+            document.getElementById('input-modal-desc').innerText = `المتاح بالمخزن: ${stock} kg`;
+            inputField.step = "0.05";
+            inputField.value = "1";
+        } else {
+            document.getElementById('input-modal-title').innerText = `أدخل عدد القطع لـ (${name})`;
+            document.getElementById('input-modal-desc').innerText = `المتاح بالمخزن: ${stock} piece`;
+            inputField.step = "1";
+            inputField.value = "1";
+        }
+
+        document.getElementById('inputModal').classList.remove('hidden');
+        inputField.focus();
+        inputField.select();
+    }
+
+    function closeInputModal() {
+        document.getElementById('inputModal').classList.add('hidden');
+        currentProduct = null;
+    }
+
+    function confirmInput() {
+        let val = parseFloat(document.getElementById('custom-input').value);
+        if (isNaN(val) || val <= 0) {
+            showToast('من فضلك ادخل قيمة صحيحة!', 'error');
+            return;
+        }
+
+        let { name, price, unit, stock } = currentProduct;
+        if (unit === 'piece') val = parseInt(val);
+
+        let currentQtyInCart = cart[name] ? cart[name].qty : 0;
+        if ((currentQtyInCart + val) > stock) {
+            showToast(`الكمية المطلوبة تتجاوز المتاح في المخزن (${stock})!`, 'error');
+            return;
+        }
+
+        if (cart[name]) {
+            cart[name].qty += val;
+        } else {
+            cart[name] = { price, qty: val, unit };
+        }
+
+        closeInputModal();
+        updateCartUI();
+    }
+
+    function changeQty(name, amount) {
+        if (cart[name]) {
+            cart[name].qty += (cart[name].unit === 'kg' ? amount * 0.5 : amount);
+            if (cart[name].qty <= 0) delete cart[name];
+        }
+        updateCartUI();
+    }
+
+    function updateCartUI() {
+        let tbody = document.getElementById('cart-body');
+        tbody.innerHTML = '';
+        let grandTotal = 0;
+
+        for (let name in cart) {
+            let item = cart[name];
+            let total = item.qty * item.price;
+            grandTotal += total;
+            let displayQty = item.unit === 'kg' ? item.qty.toFixed(2) + ' kg' : item.qty;
+
+            tbody.innerHTML += `
+                <tr class="border-b border-gray-100">
+                    <td class="p-2 font-medium">${name}</td>
+                    <td class="p-2 text-center flex items-center justify-center gap-1">
+                        <button onclick="changeQty('${name}', -1)" class="bg-[#e1b12c] hover:bg-amber-600 text-white w-5 h-5 rounded flex items-center justify-center font-bold text-xs cursor-pointer">-</button>
+                        <span class="w-10 text-center font-bold text-xs">${displayQty}</span>
+                        <button onclick="changeQty('${name}', 1)" class="bg-[#e1b12c] hover:bg-amber-600 text-white w-5 h-5 rounded flex items-center justify-center font-bold text-xs cursor-pointer">+</button>
+                    </td>
+                    <td class="p-2 text-center text-gray-600">${item.price}</td>
+                    <td class="p-2 text-right font-bold text-gray-800">${total.toFixed(2)}</td>
+                </tr>
+            `;
+        }
+        document.getElementById('grand-total').innerText = grandTotal.toFixed(2) + ' EGP';
+    }
+
+    function clearCart() { cart = {}; updateCartUI(); }
+
+    function checkout() {
+        if (Object.keys(cart).length === 0) {
+            showToast('الفاتورة فارغة!', 'error');
+            return;
+        }
+
+        let payBtn = document.querySelector('button[onclick="checkout()"]');
+        if (payBtn) payBtn.disabled = true;
+
+        fetch('/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cart })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (payBtn) payBtn.disabled = false;
+            if (data.success) {
+                showToast('تمت عملية الدفع بنجاح!', 'success');
+                clearCart();
+            } else {
+                showToast('خطأ: ' + (data.error || 'فشلت العملية'), 'error');
+            }
+        })
+        .catch(err => {
+            if (payBtn) payBtn.disabled = false;
+            console.error("Checkout error:", err);
+            showToast('حدث خطأ في الاتصال بالسيرفر!', 'error');
+        });
+    }
+</script>
+{% endblock %}

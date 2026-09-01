@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول - نظام إدارة الفرن</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts (Cairo) -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Cairo', sans-serif;
+        }
+        body {
+            background-color: #f4f7f6;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+        }
+        .login-card {
+            background: #ffffff;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            width: 900px;
+            max-width: 95%;
+        }
+        .login-img {
+            background: url('https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=1000&auto=format&fit=crop') no-repeat center center;
+            background-size: cover;
+            min-height: 450px;
+        }
+        .form-control:focus {
+            box-shadow: none;
+            border-color: #e67e22;
+        }
+        .btn-primary-custom {
+            background-color: #e67e22;
+            border: none;
+            color: white;
+            font-weight: 600;
+        }
+        .btn-primary-custom:hover {
+            background-color: #d35400;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card container-fluid">
+        <div class="row align-items-center">
+            <!-- قسم الصورة على اليمين -->
+            <div class="col-md-6 login-img d-none d-md-block p-0"></div>
+
+            <!-- قسم نموذج تسجيل الدخول على اليسار -->
+            <div class="col-md-6 p-5">
+                <div class="text-center mb-4">
+                    <h3 class="fw-bold text-dark">🥐 نظام إدارة المخبوزات</h3>
+                    <p class="text-muted small">الرجاء تسجيل الدخول للمتابعة</p>
+                </div>
+
+                <div id="error-alert" class="alert alert-danger d-none py-2 small" role="alert"></div>
+
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label for="username" class="form-label fw-semibold">اسم المستخدم</label>
+                        <input type="text" class="form-control" id="username" required placeholder="أدخل اسم المستخدم">
+                    </div>
+                    <div class="mb-4">
+                        <label for="password" class="form-label fw-semibold">كلمة المرور</label>
+                        <input type="password" class="form-control" id="password" required placeholder="أدخل كلمة المرور">
+                    </div>
+                    <button type="submit" class="btn btn-primary-custom w-100 py-2">تسجيل الدخول</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorAlert = document.getElementById('error-alert');
+            
+            errorAlert.classList.add('d-none');
+
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    window.location.href = '/';
+                } else {
+                    errorAlert.textContent = data.error || 'اسم المستخدم أو كلمة المرور غير صحيحة';
+                    errorAlert.classList.remove('d-none');
+                }
+            } catch (err) {
+                errorAlert.textContent = 'تعسّر الاتصال بالسيرفر، تأكد من تشغيل التطبيق.';
+                errorAlert.classList.remove('d-none');
+            }
+        });
+    </script>
+</body>
+</html>

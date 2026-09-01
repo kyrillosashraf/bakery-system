@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منيو المخبز - عرض المنتجات</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+        body { font-family: 'Cairo', sans-serif; }
+    </style>
+</head>
+<body class="bg-[#fdf6e3] min-h-screen text-gray-800 pb-10">
+
+    <!-- هيدر المنيو -->
+    <div class="bg-amber-700 text-white p-5 text-center shadow-md rounded-b-3xl mb-6">
+        <h1 class="text-xl font-black">🍞 منيو الحريه - عرض المنتجات</h1>
+        <p class="text-xs text-amber-100 mt-1">تعرف على منتجاتنا المتاحة وأسعارها بكل سهولة</p>
+    </div>
+
+    <!-- أزرار التصنيفات (Categories Filter) - تبدأ من البداية -->
+    <div class="max-w-6xl mx-auto px-4 mb-6 flex gap-2 overflow-x-auto pb-2 scrollbar-none justify-start">
+        <button onclick="filterCategory('all', this)" class="cat-btn bg-amber-700 text-white px-4 py-2 rounded-full text-xs font-bold shadow transition shrink-0 cursor-pointer">الكل All</button>
+        <button onclick="filterCategory('bread', this)" class="cat-btn bg-white text-gray-700 border border-amber-200 px-4 py-2 rounded-full text-xs font-bold shadow-sm transition shrink-0 cursor-pointer hover:bg-amber-50">عيش Bread</button>
+        <button onclick="filterCategory('pastries', this)" class="cat-btn bg-white text-gray-700 border border-amber-200 px-4 py-2 rounded-full text-xs font-bold shadow-sm transition shrink-0 cursor-pointer hover:bg-amber-50">حلويات Pastries</button>
+        <button onclick="filterCategory('nawashef', this)" class="cat-btn bg-white text-gray-700 border border-amber-200 px-4 py-2 rounded-full text-xs font-bold shadow-sm transition shrink-0 cursor-pointer hover:bg-amber-50">نواشف</button>
+    </div>
+
+    <!-- شبكة المنتجات - تبدأ من البداية وتأخذ مساحة أوسع -->
+    <div class="max-w-6xl mx-auto px-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        {% for p in products %}
+        <div class="product-card bg-white p-3 rounded-2xl shadow-sm border border-amber-100 flex flex-col justify-between hover:shadow-md transition" data-category="{{ p.category | lower if p.category else 'عام' }}">
+            <div>
+                <!-- صورة المنتج -->
+                <div class="h-32 bg-amber-50 rounded-xl mb-3 flex items-center justify-center overflow-hidden border border-amber-50">
+                    {% if p.image_path and p.image_path != 'default.png' %}
+                        <img src="{{ url_for('static', filename='images/' + p.image_path) }}" alt="{{ p.name }}" class="w-full h-full object-contain p-1">
+                    {% else %}
+                        <div class="text-amber-600 font-bold flex flex-col items-center">
+                            <i class="fas fa-bread-slice text-2xl mb-1"></i>
+                            <span class="text-[9px] text-gray-400">بدون صورة</span>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- بادج الوحدة -->
+                <div class="flex justify-center items-center mb-2">
+                    <span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-3 py-0.5 rounded-md">{{ p.unit if p.unit else 'قطعة' }}</span>
+                </div>
+
+                <!-- اسم المنتج والسعر -->
+                <h3 class="font-bold text-gray-800 text-sm text-center truncate">{{ p.name }}</h3>
+                <p class="text-amber-700 font-black text-base text-center mt-1">EGP {{ p.price }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        // إلغاء حفظ موضع التمرير التلقائي من المتصفح لضمان البدء من الأعلى دائماً
+        if ('scrollRestoration' in history) {
+            history.scrollRestoration = 'manual';
+        }
+
+        // إجبار الصفحة على الانتقال لأعلى نقطة (0,0) فوراً عند تحميل الملف
+        window.addEventListener('load', () => {
+            window.scrollTo(0, 0);
+        });
+
+        // تنفيذها احتياطياً بشكل فوري
+        window.scrollTo(0, 0);
+
+        // فلترة التصنيفات
+        function filterCategory(category, btnElement) {
+            let cards = document.querySelectorAll('.product-card');
+            let buttons = document.querySelectorAll('.cat-btn');
+
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-amber-700', 'text-white');
+                btn.classList.add('bg-white', 'text-gray-700');
+            });
+            
+            btnElement.classList.remove('bg-white', 'text-gray-700');
+            btnElement.classList.add('bg-amber-700', 'text-white');
+
+            cards.forEach(card => {
+                let cardCat = card.getAttribute('data-category').toLowerCase();
+                if (category === 'all' || cardCat.includes(category.toLowerCase())) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        // تحديث البيانات في الخلفية بهدوء كل 15 ثانية بدون تحريك الصفحة من مكانها أو إرجاعها للمنتصف
+        setInterval(() => {
+            fetch(window.location.href)
+                .then(response => response.text())
+                .then(html => {
+                    let parser = new DOMParser();
+                    let doc = parser.parseFromString(html, 'text/html');
+                    let newGrid = doc.querySelector('.grid');
+                    if (newGrid) {
+                        document.querySelector('.grid').innerHTML = newGrid.innerHTML;
+                    }
+                })
+                .catch(err => console.log('خطأ في التحديث التلقائي'));
+        }, 15000);
+    </script>
+</body>
+</html>

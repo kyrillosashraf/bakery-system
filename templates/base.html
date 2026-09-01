@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}نظام المخبز{% endblock %}</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Cairo', sans-serif; }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-[#fdf6e3] min-h-screen text-gray-800 w-full overflow-y-auto">
+    <!-- محتوى الصفحات الأساسي -->
+    <main class="flex-1 overflow-hidden">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- القائمة الجانبية (Sidebar Drawer) -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-50 hidden transition-opacity opacity-0" onclick="toggleSidebar()"></div>
+    
+    <div id="sidebar" class="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col justify-between border-l border-amber-100">
+        <div class="flex flex-col h-full overflow-hidden">
+            <div class="p-4 border-b border-amber-100 flex justify-between items-center bg-amber-50/50">
+                <button onclick="toggleSidebar()" class="text-gray-400 hover:text-red-500 font-bold text-xl w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 cursor-pointer">&times;</button>
+                <h2 class="text-base font-extrabold text-gray-800 flex items-center gap-2">
+                    إعدادات النظام <span>⚙️</span>
+                </h2>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-4 space-y-2.5">
+                <a href="{{ url_for('pos_screen') }}" class="flex items-center justify-between p-3 bg-amber-50/60 hover:bg-amber-100 text-amber-950 rounded-2xl transition font-bold text-xs border border-amber-200/60 shadow-xs">
+                    <span>الكاشير الرئيسي</span>
+                    <span class="text-base">🏠</span>
+                </a>
+                <a href="{{ url_for('driver_screen') }}" class="flex items-center justify-between p-3 bg-blue-50/40 hover:bg-blue-50 text-blue-950 rounded-2xl transition font-bold text-xs border border-blue-100 shadow-xs">
+                    <span>عربيات التوزيع</span>
+                    <span class="text-base">🚗</span>
+                </a>
+                {% if session.get('user_role') == 'admin' or session.get('permissions') == 'all' or 'reports' in session.get('permissions', '') %}
+                <a href="{{ url_for('reports_screen') }}" class="flex items-center justify-between p-3 bg-emerald-50/40 hover:bg-emerald-50 text-emerald-950 rounded-2xl transition font-bold text-xs border border-emerald-100 shadow-xs">
+                    <span>تقرير المبيعات الشامل</span>
+                    <span class="text-base">📊</span>
+                </a>
+                {% endif %}
+                {% if session.get('user_role') == 'admin' or session.get('permissions') == 'all' or 'expenses' in session.get('permissions', '') %}
+                <a href="{{ url_for('expenses_screen') }}" class="flex items-center justify-between p-3 bg-rose-50/40 hover:bg-rose-50 text-rose-950 rounded-2xl transition font-bold text-xs border border-rose-100 shadow-xs">
+                    <span>المصروفات العامة</span>
+                    <span class="text-base">💸</span>
+                </a>
+                {% endif %}
+                {% if session.get('user_role') == 'admin' or session.get('permissions') == 'all' or 'products' in session.get('permissions', '') %}
+                <a href="{{ url_for('products_manage_screen') }}" class="flex items-center justify-between p-3 bg-amber-50/30 hover:bg-amber-100 text-amber-950 rounded-2xl transition font-bold text-xs border border-amber-200/50 shadow-xs">
+                    <span>إدارة المنتجات</span>
+                    <span class="text-base">🛠️</span>
+                </a>
+                {% endif %}
+                {% if session.get('user_role') == 'admin' or session.get('permissions') == 'all' or 'raw_inventory' in session.get('permissions', '') %}
+                <a href="{{ url_for('raw_inventory') }}" class="flex items-center justify-between p-3 bg-purple-50/40 hover:bg-purple-50 text-purple-950 rounded-2xl transition font-bold text-xs border border-purple-100 shadow-xs">
+                    <span>إدارة المخزون والخامات</span>
+                    <span class="text-base">📦</span>
+                </a>
+                {% endif %}
+                {% if session.get('user_role') == 'admin' %}
+                <a href="{{ url_for('users_manage') }}" class="flex items-center justify-between p-3 bg-indigo-50/40 hover:bg-indigo-50 text-indigo-950 rounded-2xl transition font-bold text-xs border border-indigo-100 shadow-xs">
+                    <span>إدارة المستخدمين والصلاحيات</span>
+                    <span class="text-base">👥</span>
+                </a>
+                {% endif %}
+            </div>
+
+            <div class="p-4 border-t border-amber-100 bg-gray-50">
+                <a href="{{ url_for('logout') }}" class="flex items-center justify-center gap-2 w-full bg-red-500 hover:bg-red-600 text-white p-3 rounded-xl transition font-bold text-xs shadow cursor-pointer">
+                    <span>تسجيل الخروج</span>
+                    <span class="text-sm">🚪</span>
+                </a>
+                <p class="text-center text-[10px] text-gray-400 mt-3">Bakery POS System &copy; 2026</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="fixed bottom-5 left-5 z-50 flex flex-col gap-2"></div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (sidebar.classList.contains('translate-x-full')) {
+                sidebar.classList.remove('translate-x-full');
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+            } else {
+                sidebar.classList.add('translate-x-full');
+                overlay.classList.add('opacity-0');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            let bgClass = type === 'success' ? 'bg-emerald-600' : 'bg-red-600';
+            toast.className = `${bgClass} text-white px-4 py-3 rounded-xl shadow-xl text-xs font-bold transition-all transform translate-y-2 opacity-0 flex items-center gap-2`;
+            toast.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 100);
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

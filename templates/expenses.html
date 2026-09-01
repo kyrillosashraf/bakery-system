@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}إدارة المصروفات{% endblock %}
+
+{% block content %}
+    <!-- شريط علوي -->
+    <header class="bg-white border-b border-amber-100 shadow-xs px-6 py-4 flex flex-wrap justify-between items-center gap-4">
+        <div class="flex items-center gap-3">
+            <button onclick="toggleSidebar()" class="bg-amber-100 hover:bg-amber-200 text-amber-900 p-2.5 rounded-xl transition shadow-sm flex flex-col justify-between w-10 h-10 items-center justify-center shrink-0 cursor-pointer">
+                <span class="w-5 h-0.5 bg-amber-900 rounded-full block"></span>
+                <span class="w-5 h-0.5 bg-amber-900 rounded-full block"></span>
+                <span class="w-5 h-0.5 bg-amber-900 rounded-full block"></span>
+            </button>
+            <span class="text-2xl">💸</span>
+            <div>
+                <h1 class="text-sm font-black text-amber-900">إدارة المصروفات العامة</h1>
+                <p class="text-[11px] text-gray-400">تسجيل ومتابعة مصروفات الكهرباء، المياه، الغاز، الإيجار، والعمالة</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3 bg-amber-50/60 border border-amber-200 px-3 py-1.5 rounded-xl shadow-sm">
+            <span class="text-xs">📅</span>
+            <label for="filter-date" class="text-xs font-bold text-amber-900">عرض تاريخ:</label>
+            <input type="date" id="filter-date" onchange="loadExpenses()" class="bg-white border border-amber-200 rounded-lg px-2 py-1 text-xs font-bold text-amber-900 focus:outline-none cursor-pointer">
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-6 flex-1 overflow-y-auto w-full">
+        
+        <!-- نموذج إضافة مصروف جديد -->
+        <div class="bg-white p-5 rounded-2xl border border-amber-100 shadow-sm space-y-4 h-fit">
+            <h3 class="text-xs font-bold text-amber-900 border-b pb-2">➕ تسجيل مصروف جديد</h3>
+            <form id="expense-form" onsubmit="addExpense(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">نوع المصروف</label>
+                    <select id="expense-type" class="w-full bg-amber-50/50 border border-amber-200 rounded-xl p-2 text-xs font-bold text-gray-800 focus:outline-none">
+                        <option value="كهرباء">⚡ كهرباء</option>
+                        <option value="مياه">💧 مياه</option>
+                        <option value="غاز">🔥 غاز</option>
+                        <option value="إيجار">🏠 إيجار</option>
+                        <option value="عمالة">👨‍🍳 عمالة / أجور</option>
+                        <option value="صيانة">🛠️ صيانة</option>
+                        <option value="أخرى">📦 أخرى</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">المبلغ (EGP)</label>
+                    <input type="number" step="0.01" id="expense-amount" placeholder="0.00" required class="w-full bg-amber-50/50 border border-amber-200 rounded-xl p-2 text-xs font-bold text-gray-800 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">ملاحظات (اختياري)</label>
+                    <input type="text" id="expense-notes" placeholder="تفاصيل إضافية..." class="w-full bg-amber-50/50 border border-amber-200 rounded-xl p-2 text-xs font-bold text-gray-800 focus:outline-none">
+                </div>
+                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold p-2.5 rounded-xl text-xs transition shadow-sm cursor-pointer">
+                    حفظ المصروف
+                </button>
+            </form>
+        </div>
+
+        <!-- قائمة المصروفات المسجلة -->
+        <div class="md:col-span-2 bg-white p-5 rounded-2xl border border-amber-100 shadow-sm space-y-4">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="text-xs font-bold text-red-900">📋 سجل المصروفات لهذا اليوم</h3>
+                <span id="total-expenses-badge" class="bg-red-100 text-red-800 text-xs font-black px-3 py-1 rounded-full">الإجمالي: 0.00 EGP</span>
+            </div>
+            
+            <div id="expenses-list" class="space-y-2 overflow-y-auto max-h-[400px]">
+                <p class="text-xs text-gray-400 text-center py-10">جاري تحميل المصروفات...</p>
+            </div>
+        </div>
+
+    </main>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        window.onload = function() {
+            let now = new Date();
+            let year = now.getFullYear();
+            let month = String(now.getMonth() + 1).padStart(2, '0');
+            let day = String(now.getDate()).padStart(2, '0');
+            document.getElementById('filter-date').value = `${year}-${month}-${day}`;
+            loadExpenses();
+        };
+
+        function loadExpenses() {
+            let date = document.getElementById('filter-date').value;
+            fetch(`/get_general_expenses?date=${date}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    let container = document.getElementById('expenses-list');
+                    container.innerHTML = '';
+                    
+                    document.getElementById('total-expenses-badge').innerText = `الإجمالي: ${data.total.toFixed(2)} EGP`;
+
+                    if (!data.expenses || data.expenses.length === 0) {
+                        container.innerHTML = `<p class="text-xs text-gray-400 text-center py-10">لا توجد مصروفات مسجلة في هذا اليوم</p>`;
+                        return;
+                    }
+
+                    data.expenses.forEach(exp => {
+                        container.innerHTML += `
+                            <div class="bg-red-50/40 border border-red-100 p-3.5 rounded-xl flex justify-between items-center text-xs">
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-gray-900 text-sm">${exp.expense_type}</span>
+                                        <span class="text-gray-400 text-[10px]">${exp.date}</span>
+                                    </div>
+                                    <!-- تم تعديل خط الملاحظة هنا ليكون واضحاً وداكناً وكبيراً نسبياً -->
+                                    ${exp.notes ? `<p class="text-gray-800 text-sm font-bold bg-white/60 px-2 py-0.5 rounded border border-red-100 w-fit">${exp.notes}</p>` : ''}
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <span class="font-black text-red-600 text-sm">${Number(exp.amount).toFixed(2)} EGP</span>
+                                    <button onclick="deleteExpense(${exp.id})" class="text-red-400 hover:text-red-700 font-bold px-2 py-1 rounded cursor-pointer transition">🗑️</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+            });
+        }
+
+        function addExpense(e) {
+            e.preventDefault();
+            let type = document.getElementById('expense-type').value;
+            let amount = document.getElementById('expense-amount').value;
+            let notes = document.getElementById('expense-notes').value;
+            let date = document.getElementById('filter-date').value;
+
+            fetch('/add_general_expense', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ expense_type: type, amount: amount, notes: notes, date: date })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('expense-amount').value = '';
+                    document.getElementById('expense-notes').value = '';
+                    loadExpenses();
+                } else {
+                    alert(data.error);
+                }
+            });
+        }
+
+        function deleteExpense(id) {
+            if (confirm('هل أنت متأكد من حذف هذا المصروف؟')) {
+                fetch(`/delete_general_expense`, { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        loadExpenses();
+                    } else {
+                        alert(data.error);
+                    }
+                });
+            }
+        }
+    </script>
+{% endblock %}

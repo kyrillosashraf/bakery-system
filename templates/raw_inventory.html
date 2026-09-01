@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+
+{% block title %}إدارة المخزون والخامات والتكلفة{% endblock %}
+
+{% block content %}
+    <!-- المحتوى الرئيسي بعرض الشاشة الكامل -->
+    <main class="w-full px-6 py-6 space-y-6 flex-1 overflow-y-auto">
+
+        <!-- الهيدر العلوي مع أيقونة الجرس -->
+        <div class="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-amber-100 relative">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebar()" class="bg-amber-600 hover:bg-amber-700 text-white p-2.5 rounded-xl transition shadow-md flex flex-col justify-center gap-1.5 w-10 h-10 items-center cursor-pointer">
+                    <span class="w-5 h-0.5 bg-white rounded-full block"></span>
+                    <span class="w-5 h-0.5 bg-white rounded-full block"></span>
+                    <span class="w-5 h-0.5 bg-white rounded-full block"></span>
+                </button>
+                <div>
+                    <h1 class="text-xl font-black text-[#854d0e]">إدارة المخزون والخامات وحساب التكلفة</h1>
+                    <p class="text-[11px] text-gray-500 font-bold">متابعة الأرصدة، أسعار الشراء، وحساب إجمالي قيمة رأس المال بالمخزن</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <!-- أيقونة الجرس للإشعارات -->
+                <div class="relative">
+                    <button onclick="toggleNotifications()" class="bg-amber-50 hover:bg-amber-100 text-amber-800 p-2.5 rounded-xl transition relative flex items-center justify-center w-10 h-10 cursor-pointer border border-amber-200">
+                        <span class="text-lg">🔔</span>
+                        <span id="notifBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center hidden shadow-md animate-pulse">0</span>
+                    </button>
+
+                    <div id="notifDropdown" class="absolute left-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-amber-100 hidden z-50 p-4 text-right">
+                        <div class="flex justify-between items-center mb-3 border-b pb-2">
+                            <h4 class="font-bold text-xs text-amber-900">تنبيهات نفاذ الخامات ⚠️</h4>
+                            <span class="text-[10px] text-gray-400">المخزون الحالي</span>
+                        </div>
+                        <div id="notifList" class="flex flex-col gap-2 max-h-60 overflow-y-auto"></div>
+                    </div>
+                </div>
+
+                <button onclick="openAddModal()" class="bg-[#d97706] hover:bg-[#b45309] text-white font-bold px-4 py-2.5 rounded-xl text-xs transition shadow-sm flex items-center gap-2 cursor-pointer">
+                    <span>➕</span> إضافة مادة خام جديدة
+                </button>
+            </div>
+        </div>
+
+        <!-- بطاقة إجمالي رأس مال المخزون -->
+        <div class="bg-gradient-to-l from-amber-600 to-amber-700 text-white p-5 rounded-2xl shadow-md flex justify-between items-center">
+            <div>
+                <p class="text-xs font-bold text-amber-100">إجمالي قيمة رأس مال الخامات في المخزن:</p>
+                <h2 id="totalInventoryValue" class="text-2xl font-black mt-1">0.00 ج.م</h2>
+            </div>
+            <div class="bg-amber-500/40 p-3 rounded-2xl text-2xl border border-amber-400/30">
+                💰
+            </div>
+        </div>
+
+        <!-- محتوى جدول الخامات -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-amber-100">
+            <div class="overflow-x-auto">
+                <table class="w-full text-right border-collapse">
+                    <thead>
+                        <tr class="bg-amber-50/60 text-[#854d0e] text-xs font-black">
+                            <th class="p-3.5 rounded-r-xl">اسم المادة الخام</th>
+                            <th class="p-3.5 text-center">الكمية الحالية</th>
+                            <th class="p-3.5 text-center">وحدة القياس</th>
+                            <th class="p-3.5 text-center">سعر التكلفة (للوحدة)</th>
+                            <th class="p-3.5 text-center">إجمالي القيمة</th>
+                            <th class="p-3.5 text-center">حد التنبيه</th>
+                            <th class="p-3.5 text-left rounded-l-xl">الإجراءات والعمليات</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-gray-700 text-xs font-semibold">
+                        {% for item in raw_materials %}
+                        <tr class="border-b border-gray-100 hover:bg-amber-50/20 transition">
+                            <td class="p-3.5 font-bold text-gray-800">{{ item.name }}</td>
+                            <td class="p-3.5 text-center font-black text-[#d97706] text-sm item-qty">{{ item.quantity }}</td>
+                            <td class="p-3.5 text-center text-gray-500">{{ item.unit }}</td>
+                            <td class="p-3.5 text-center font-bold text-gray-700"><span class="item-cost">{{ item.cost_price }}</span> ج.م</td>
+                            <td class="p-3.5 text-center font-black text-emerald-700 item-total">0.00 ج.م</td>
+                            <td class="p-3.5 text-center">
+                                <span class="px-2.5 py-1 rounded-full text-[11px] font-bold item-min {% if item.quantity <= item.min_limit %} bg-red-100 text-red-700 animate-pulse {% else %} bg-gray-100 text-gray-600 {% endif %}">
+                                    {{ item.min_limit }}
+                                </span>
+                            </td>
+                            <td class="p-3.5 text-left">
+                                <div class="flex gap-1.5 justify-end items-center flex-wrap">
+                                    <button onclick="openActionModal('{{ item.id }}', '{{ item.name }}', 'supply')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-2.5 py-1.5 rounded-xl text-[11px] transition cursor-pointer shadow-sm">+ توريد</button>
+                                    <button onclick="openActionModal('{{ item.id }}', '{{ item.name }}', 'consume')" class="bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold px-2.5 py-1.5 rounded-xl text-[11px] transition cursor-pointer shadow-sm">- استهلاك</button>
+                                    <button onclick="openEditModal('{{ item.id }}', '{{ item.name }}', '{{ item.unit }}', '{{ item.min_limit }}', '{{ item.cost_price }}')" class="bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold px-2.5 py-1.5 rounded-xl text-[11px] transition cursor-pointer shadow-sm">✏️ تعديل</button>
+                                    <button onclick="deleteRawMaterial('{{ item.id }}', '{{ item.name }}')" class="bg-red-50 hover:bg-red-100 text-red-700 font-bold px-2.5 py-1.5 rounded-xl text-[11px] transition cursor-pointer shadow-sm">🗑️ حذف</button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- نافذة توريد أو استهلاك -->
+    <div id="actionModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-6 w-[380px] shadow-2xl border border-gray-200 text-right">
+            <h3 id="modalTitle" class="text-lg font-bold text-[#854d0e] mb-2">تحديث المخزون</h3>
+            <p id="modalItemName" class="text-xs text-gray-500 font-bold mb-4"></p>
+            
+            <input type="hidden" id="actionItemId">
+            <input type="hidden" id="actionType">
+
+            <div class="mb-5">
+                <label class="block text-xs font-bold text-gray-600 mb-1">أدخل الكمية:</label>
+                <input type="number" step="0.1" id="actionAmount" placeholder="مثال: 50" class="border border-gray-300 p-3 rounded-xl w-full text-sm font-black text-amber-700 focus:outline-none focus:border-amber-600">
+            </div>
+
+            <div class="flex gap-2">
+                <button type="button" onclick="closeActionModal()" class="w-1/2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-xl transition cursor-pointer text-xs">إلغاء</button>
+                <button type="button" onclick="submitActionStock()" class="w-1/2 bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 rounded-xl transition shadow-sm cursor-pointer text-xs">تأكيد وتنفيذ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة تعديل بيانات مادة خام -->
+    <div id="editModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-6 w-[400px] shadow-2xl border border-gray-200 text-right">
+            <h3 class="text-lg font-bold text-[#854d0e] mb-4">تعديل بيانات المادة الخام وتكلفتها</h3>
+            
+            <form action="/update_raw_material" method="POST">
+                <input type="hidden" name="id" id="editId">
+                
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-gray-600 mb-1">اسم المادة:</label>
+                    <input type="text" name="name" id="editName" required class="border border-gray-300 p-2.5 rounded-xl w-full text-xs font-bold focus:outline-none focus:border-amber-600">
+                </div>
+
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-gray-600 mb-1">وحدة القياس:</label>
+                    <select name="unit" id="editUnit" class="border border-gray-300 p-2.5 rounded-xl w-full text-xs font-bold focus:outline-none focus:border-amber-600">
+                        <option value="كيلو (Kg)">كيلو (Kg)</option>
+                        <option value="شكارة (Bag)">شكارة (Bag)</option>
+                        <option value="لتر (Liter)">لتر (Liter)</option>
+                        <option value="كرتونة (Carton)">كرتونة (Carton)</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-gray-600 mb-1">سعر التكلفة للوحدة (ج.م):</label>
+                    <input type="number" step="0.1" name="cost_price" id="editCostPrice" required class="border border-gray-300 p-2.5 rounded-xl w-full text-xs font-bold focus:outline-none focus:border-amber-600">
+                </div>
+
+                <div class="mb-5">
+                    <label class="block text-xs font-bold text-gray-600 mb-1">حد التنبيه لنفاذ الكمية:</label>
+                    <input type="number" step="0.1" name="min_limit" id="editMinLimit" required class="border border-gray-300 p-2.5 rounded-xl w-full text-xs font-bold focus:outline-none focus:border-amber-600">
+                </div>
+
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeEditModal()" class="w-1/2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-xl transition cursor-pointer text-xs">إلغاء</button>
+                    <button type="submit" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl transition shadow-sm cursor-pointer text-xs">حفظ التعديلات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- نافذة إضافة مادة خام جديدة -->
+    <div id="addModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-6 w-[400px] shadow-2xl border border-gray-200 text-right">
+            <h3 class="text-lg font-bold text-[#854d0e] mb-4">إضافة مادة خام جديدة وتكلفتها</h3>
+            
+            <form action="/add_raw_material" method="POST">
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-gray-600 mb-1">اسم المادة:</label>
+                    <input type="text" name="name" required class="border border-gray-300 p-2.5 rounded-xl w-full text-xs font-bold focus:outline-none focus:border-amber-600">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-gray-600 mb-1">الكمية الابتدائية:</label>
+                    <input type="number" step="0.1" name="quantity" required value="100" class="border border-gray-300 p-2.5 rounded-xl w-full text-xs font-bold focus:outline-none focus:border-amber-600">
+                </div>
+
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-gray-600 mb-1">وحدة القياس:</label>
+                    <select name="unit" class="border border-gray-300 p-2.5 rounded-xl w-full text-xs font-bold focus:outline-none focus:border-amber-600">
+                        <option value="كيلو (Kg)">كيلو (Kg)</option>
+                        <option value="شكارة (Bag)">شكارة (Bag)</option>
+                        <option value="لتر (Liter)">لتر (Liter)</option>
+                        <option value="كرتونة (Carton)">كرتونة (Carton)</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="block text-xs font-bold text-gray-600 mb-1">سعر التكلفة للوحدة الواحدة (ج.م):</label>
+                    <input type="number" step="0.1" name="cost_price" required value="50" class="border border-gray-300 p-2.5 rounded-xl w-full text-xs font-bold focus:outline-none focus:border-amber-600">
+                </div>
+
+                <div class="mb-5">
+                    <label class="block text-xs font-bold text-gray-600 mb-1">حد التنبيه لنفاذ الكمية:</label>
+                    <input type="number" step="0.1" name="min_limit" required value="20" class="border border-gray-300 p-2.5 rounded-xl w-full text-xs font-bold focus:outline-none focus:border-amber-600">
+                </div>
+
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeAddModal()" class="w-1/2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-xl transition cursor-pointer text-xs">إلغاء</button>
+                    <button type="submit" class="w-1/2 bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 rounded-xl transition shadow-sm cursor-pointer text-xs">حفظ وإضافة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        function openAddModal() {
+            document.getElementById('addModal').classList.remove('hidden');
+        }
+
+        function closeAddModal() {
+            document.getElementById('addModal').classList.add('hidden');
+        }
+
+        function openActionModal(id, name, type) {
+            document.getElementById('actionItemId').value = id;
+            document.getElementById('actionType').value = type;
+            document.getElementById('actionAmount').value = '';
+            
+            let titleText = type === 'supply' ? '➕ توريد كمية جديدة إلى: ' : '➖ تسجيل استهلاك من: ';
+            document.getElementById('modalTitle').innerText = type === 'supply' ? 'توريد للمخزن' : 'تسجيل استهلاك';
+            document.getElementById('modalItemName').innerText = titleText + name;
+            
+            document.getElementById('actionModal').classList.remove('hidden');
+            document.getElementById('actionAmount').focus();
+        }
+
+        function closeActionModal() {
+            document.getElementById('actionModal').classList.add('hidden');
+        }
+
+        function submitActionStock() {
+            let id = document.getElementById('actionItemId').value;
+            let type = document.getElementById('actionType').value;
+            let val = parseFloat(document.getElementById('actionAmount').value);
+
+            if (isNaN(val) || val <= 0) {
+                alert('برجاء إدخال كمية صحيحة أكبر من الصفر');
+                return;
+            }
+
+            let finalAmount = type === 'supply' ? val : -val;
+
+            fetch('/update_raw_stock', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id, amount: finalAmount })
+            }).then(res => res.json()).then(data => {
+                if(data.success) {
+                    location.reload();
+                } else {
+                    alert('حدث خطأ أثناء التحديث');
+                }
+            });
+        }
+
+        function openEditModal(id, name, unit, minLimit, costPrice) {
+            document.getElementById('editId').value = id;
+            document.getElementById('editName').value = name;
+            document.getElementById('editUnit').value = unit;
+            document.getElementById('editMinLimit').value = minLimit;
+            document.getElementById('editCostPrice').value = costPrice;
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.add('hidden');
+        }
+
+        function deleteRawMaterial(id, name) {
+            if (confirm(`هل أنت متأكد من حذف المادة الخام (${name}) نهائياً؟`)) {
+                fetch('/delete_raw_material', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id })
+                }).then(res => res.json()).then(data => {
+                    if(data.success) {
+                        location.reload();
+                    } else {
+                        alert('حدث خطأ أثناء الحذف');
+                    }
+                });
+            }
+        }
+
+        function calculateInventoryCosts() {
+            let rows = document.querySelectorAll('tbody tr');
+            let grandTotal = 0;
+            let lowStockItems = [];
+
+            rows.forEach(row => {
+                let name = row.cells[0].innerText;
+                let qtyEl = row.querySelector('.item-qty');
+                let costEl = row.querySelector('.item-cost');
+                let minEl = row.querySelector('.item-min');
+
+                let qty = qtyEl ? parseFloat(qtyEl.innerText) || 0 : 0;
+                let cost = costEl ? parseFloat(costEl.innerText) || 0 : 0;
+                let minLimit = minEl ? parseFloat(minEl.innerText) || 0 : 0;
+
+                let totalItemCost = qty * cost;
+                grandTotal += totalItemCost;
+
+                if (costEl) costEl.innerText = cost.toLocaleString();
+                let totalCell = row.querySelector('.item-total');
+                if (totalCell) totalCell.innerText = totalItemCost.toLocaleString() + ' ج.م';
+
+                if (qty <= minLimit) {
+                    lowStockItems.push({ name: name, qty: qty });
+                }
+            });
+
+            let totalInvEl = document.getElementById('totalInventoryValue');
+            if (totalInvEl) {
+                totalInvEl.innerText = grandTotal.toLocaleString() + ' ج.م';
+            }
+
+            let badge = document.getElementById('notifBadge');
+            let notifList = document.getElementById('notifList');
+
+            if (lowStockItems.length > 0) {
+                if (badge) {
+                    badge.innerText = lowStockItems.length;
+                    badge.classList.remove('hidden');
+                }
+                if (notifList) {
+                    notifList.innerHTML = '';
+                    lowStockItems.forEach(item => {
+                        notifList.innerHTML += `
+                            <div class="bg-red-50 border border-red-100 p-2.5 rounded-xl flex justify-between items-center text-xs">
+                                <span class="font-bold text-red-800">${item.name}</span>
+                                <span class="bg-red-200 text-red-900 font-black px-2 py-0.5 rounded-lg text-[10px]">المتبقي: ${item.qty}</span>
+                            </div>
+                        `;
+                    });
+                }
+            } else {
+                if (badge) badge.classList.add('hidden');
+                if (notifList) notifList.innerHTML = `<p class="text-center text-gray-400 text-xs py-4">لا توجد تنبيهات، كل الخامات في الأمان ✅</p>`;
+            }
+        }
+
+        function toggleNotifications() {
+            let drop = document.getElementById('notifDropdown');
+            drop.classList.toggle('hidden');
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            calculateInventoryCosts();
+        });
+    </script>
+{% endblock %}
