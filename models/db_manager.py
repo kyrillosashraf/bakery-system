@@ -195,6 +195,8 @@ def seed_data():
         ("معموله ", 100.0, 90.0, 1000, "kg", "معموله.png", "nawashef"),
         ("مانيه عجوه وملبن ", 100.0, 90.0, 1000, "kg", "مانيه عجوه وملبن .png", "nawashef"),
         ("قطعه ب5 ", 5, 5, 1000, "piece", "5.png", "nawashef"),
+        ("علبه حلويات", 120.0, 105.0, 1000, "kg", "علبه حلويات.png.png", "pastries"),
+
     ]
     cursor.executemany(
         "INSERT INTO products (name, price, wholesale_price, stock, unit,"
