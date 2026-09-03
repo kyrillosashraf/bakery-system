@@ -27,10 +27,10 @@
             </a>
         </div>
 
-        <!-- إضافة منتج جديد -->
+        <!-- إضافة منتج جديد مع خانة رفع الصورة -->
         <div class="bg-white p-5 rounded-2xl border border-amber-100 shadow-lg space-y-3">
-            <h3 class="font-bold text-amber-900 text-xs border-b pb-2">➕ إضافة منتج جديد</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3">
+            <h3 class="font-bold text-amber-900 text-xs border-b pb-2">➕ إضافة منتج جديد مع صورته</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-7 gap-3 items-center">
                 <input type="text" id="new-name" placeholder="اسم المنتج" class="border bg-white p-2.5 rounded-xl text-xs font-bold outline-none focus:border-amber-500">
                 <input type="number" id="new-price" placeholder="سعر القطاعي" class="border bg-white p-2.5 rounded-xl text-xs font-bold outline-none focus:border-amber-500">
                 <input type="number" id="new-wholesale" placeholder="سعر الجملة" class="border bg-white p-2.5 rounded-xl text-xs font-bold outline-none focus:border-amber-500">
@@ -39,6 +39,9 @@
                     <option value="piece">Piece (قطعة)</option>
                     <option value="kg">KG (كيلو)</option>
                 </select>
+                <!-- خانة اختيار الصورة -->
+                <input type="file" id="new-image" accept="image/*" class="border bg-white p-2 rounded-xl text-[10px] font-bold outline-none focus:border-amber-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100">
+                
                 <button onclick="addNewProduct()" class="bg-amber-600 hover:bg-amber-700 text-white p-2.5 rounded-xl text-xs font-bold shadow cursor-pointer">إضافة الصنف</button>
             </div>
         </div>
@@ -93,16 +96,26 @@
             let wholesale_price = document.getElementById('new-wholesale').value || 0;
             let stock = document.getElementById('new-stock').value || 100;
             let unit = document.getElementById('new-unit').value;
+            let imageFile = document.getElementById('new-image').files[0];
 
             if(!name || !price) {
                 showToast('من فضلك أدخل اسم المنتج وسعر القطاعي!');
                 return;
             }
 
+            let formData = new FormData();
+            formData.append('name', name);
+            formData.append('price', price);
+            formData.append('wholesale_price', wholesale_price);
+            formData.append('stock', stock);
+            formData.append('unit', unit);
+            if(imageFile) {
+                formData.append('image', imageFile);
+            }
+
             fetch('/add_product', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, price, wholesale_price, stock, unit, image_path: 'fino.png' })
+                body: formData
             }).then(res => res.json()).then(data => {
                 if(data.success) {
                     showToast('تم إضافة المنتج بنجاح!', 'success');
