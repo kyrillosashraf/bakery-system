@@ -19,6 +19,7 @@ from flask_limiter.util import get_remote_address
 from functools import wraps
 import qrcode
 from werkzeug.security import generate_password_hash
+from werkzeug.utils import secure_filename
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from models.db_manager import (
@@ -593,31 +594,41 @@ def api_get_products_json():
 @app.route("/add_product", methods=["POST"])
 @permission_required("products")
 def api_add_product():
-  data = request.json
-  name = data.get("name")
-  price = data.get("price")
-  wholesale_price = data.get("wholesale_price", 0)
-  stock = data.get("stock", 100)
-  unit = data.get("unit", "piece")
-  image_path = data.get("image_path", "fino.png")
+  try:
+    name = request.form.get("name")
+    price = request.form.get("price")
+    wholesale_price = request.form.get("wholesale_price", 0)
+    stock = request.form.get("stock", 100)
+    unit = request.form.get("unit", "piece")
 
-  if name and price is not None:
-    try:
-      if float(price) < 0 or float(stock) < 0:
-        return jsonify({"success": False, "error": "السعر أو المخزون لا يمكن أن يكون سالباً"})
+    if not name or price is None:
+      return jsonify({"success": False, "error": "بيانات غير مكتملة"})
 
-      add_product(
-          name,
-          float(price),
-          float(wholesale_price),
-          int(stock),
-          unit,
-          image_path,
-      )
-      return jsonify({"success": True})
-    except Exception as e:
-      return jsonify({"success": False, "error": str(e)})
-  return jsonify({"success": False, "error": "بيانات غير مكتملة"})
+    if float(price) < 0 or float(stock) < 0:
+      return jsonify({"success": False, "error": "السعر أو المخزون لا يمكن أن يكون سالباً"})
+
+    # التعامل مع الصورة المرفوعة وحفظها في مجلد static/images
+    image_filename = "fino.png"
+    if "image" in request.files:
+      file = request.files["image"]
+      if file and file.filename != "":
+        filename = secure_filename(file.filename)
+        upload_folder = os.path.join(app.root_path, "static", "images")
+        os.makedirs(upload_folder, exist_ok=True)
+        file.save(os.path.join(upload_folder, filename))
+        image_filename = filename
+
+    add_product(
+        name,
+        float(price),
+        float(wholesale_price),
+        int(float(stock)),
+        unit,
+        image_filename,
+    )
+    return jsonify({"success": True})
+  except Exception as e:
+    return jsonify({"success": False, "error": str(e)})
 
 
 @app.route("/delete_product", methods=["POST"])
