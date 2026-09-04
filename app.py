@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import io
 import json
 import os
@@ -17,7 +17,10 @@ from flask import (
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from functools import wraps
+import numpy as np
 import qrcode
+from sklearn.cluster import KMeans
+from sklearn.linear_model import LinearRegression
 from werkzeug.security import generate_password_hash
 from werkzeug.utils import secure_filename
 
@@ -570,6 +573,171 @@ def api_custom_report():
     return jsonify({"success": False, "error": str(e)})
 
 
+# --- مسارات الـ Data Science والتحليلات المتقدمة ---
+@app.route("/api/analytics/forecast", methods=["GET"])
+@permission_required("reports")
+def api_sales_forecast():
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT DATE(created_at) as sale_date, SUM(total_price) as daily_total
+            FROM invoices
+            GROUP BY DATE(created_at)
+            ORDER BY sale_date ASC
+        """)
+        rows = cursor.fetchall()
+        conn.close()
+
+        if len(rows) < 2:
+            return jsonify({
+                "success": True, 
+                "message": "البيانات التاريخية غير كافية لتشغيل نموذج التنبؤ (يلزم يومين على الأقل)",
+                "historical_dates": [],
+                "historical_sales": [],
+                "forecast_dates": [],
+                "forecast_sales": []
+            })
+
+        days = np.array(range(len(rows))).reshape(-1, 1)
+        sales = np.array([row[1] for row in rows])
+
+        model = LinearRegression()
+        model.fit(days, sales)
+
+        future_days = np.array(range(len(rows), len(rows) + 5)).reshape(-1, 1)
+        future_preds = model.predict(future_days)
+
+        historical_dates = [row[0] for row in rows]
+        last_date = datetime.strptime(historical_dates[-1], "%Y-%m-%d")
+        future_dates = [(last_date + timedelta(days=i+1)).strftime("%Y-%m-%d") for i in range(5)]
+
+        return jsonify({
+            "success": True,
+            "historical_dates": historical_dates,
+            "historical_sales": list(sales),
+            "forecast_dates": future_dates,
+            "forecast_sales": list(future_preds)
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
+@app.route("/api/analytics/segments", methods=["GET"])
+@permission_required("reports")
+def api_customer_segments():
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT shop_name, SUM(total_price) as total_spent, COUNT(id) as order_count
+            FROM invoices
+            WHERE shop_name IS NOT NULL AND shop_name != ''
+            GROUP BY shop_name
+        """)
+        rows = cursor.fetchall()
+        conn.close()
+
+        if len(rows) < 3:
+            return jsonify({
+                "success": True,
+                "message": "البيانات غير كافية لعمل Clustering (يلزم 3 عملاء على الأقل)",
+                "segments": []
+            })
+
+        shops = [row[0] for row in rows]
+        X = np.array([[row[1], row[2]] for row in rows])
+
+        kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
+        labels = kmeans.fit_predict(X)
+
+        segmented_data = []
+        for i in range(len(shops)):
+            cluster_id = int(labels[i])
+            cluster_name = "عملاء مميزون (VIP)" if cluster_id == 2 else ("عملاء منتظمون" if cluster_id == 1 else "عملاء منخفضوا النشاط")
+            
+            segmented_data.append({
+                "shop_name": shops[i],
+                "total_spent": rows[i][1],
+                "order_count": rows[i][2],
+                "segment": cluster_name
+            })
+
+        return jsonify({
+            "success": True,
+            "segments": segmented_data
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
+@app.route("/api/analytics/financials", methods=["GET"])
+@permission_required("reports")
+def api_financials_and_inventory():
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT strftime('%Y-%m', created_at) as month, SUM(total_price) as revenue
+            FROM invoices
+            GROUP BY month
+            ORDER BY month ASC
+        """)
+        monthly_sales = cursor.fetchall()
+
+        cursor.execute("""
+            SELECT SUM(i.total_price), SUM(p.cost_price * i.quantity) 
+            FROM invoice_items i
+            JOIN products p ON i.product_id = p.id
+        """)
+        financial_sums = cursor.fetchone()
+        total_revenue = financial_sums[0] or 0.0
+        total_cost = financial_sums[1] or 0.0
+        
+        cursor.execute("SELECT SUM(amount) FROM expenses")
+        total_expenses = cursor.fetchone()[0] or 0.0
+
+        net_profit = total_revenue - total_cost - total_expenses
+        profit_margin = (net_profit / total_revenue * 100) if total_revenue > 0 else 0
+
+        cursor.execute("""
+            SELECT name, stock, unit 
+            FROM products 
+            WHERE stock <= 5
+        """)
+        critical_stock = [{"name": r[0], "stock": r[1], "unit": r[2]} for r in cursor.fetchall()]
+
+        cursor.execute("""
+            SELECT STRFTIME('%w', created_at) as day_of_week, SUM(total_price) as total
+            FROM invoices
+            GROUP BY day_of_week
+        """)
+        pattern_rows = cursor.fetchall()
+        conn.close()
+
+        days_map = {'0': 'الأحد', '1': 'الإثنين', '2': 'الثلاثاء', '3': 'الأربعاء', '4': 'الخميس', '5': 'الجمعة', '6': 'السبت'}
+        weekly_patterns = [{"day": days_map.get(str(r[0]), 'أخرى'), "sales": r[1]} for r in pattern_rows]
+
+        return jsonify({
+            "success": True,
+            "financials": {
+                "total_revenue": total_revenue,
+                "total_cost": total_cost,
+                "total_expenses": total_expenses,
+                "net_profit": net_profit,
+                "profit_margin": round(profit_margin, 2)
+            },
+            "monthly_growth": [{"month": m[0], "revenue": m[1]} for m in monthly_sales],
+            "critical_stock": critical_stock,
+            "weekly_patterns": weekly_patterns
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
 @app.route("/get_products_json", methods=["GET"])
 @login_required
 def api_get_products_json():
@@ -607,7 +775,6 @@ def api_add_product():
     if float(price) < 0 or float(stock) < 0:
       return jsonify({"success": False, "error": "السعر أو المخزون لا يمكن أن يكون سالباً"})
 
-    # التعامل مع الصورة المرفوعة وحفظها في مجلد static/images
     image_filename = "fino.png"
     if "image" in request.files:
       file = request.files["image"]
