@@ -215,28 +215,8 @@ def pos_screen():
 @app.route("/driver")
 @permission_required("driver")
 def driver_screen():
-  # جلب المحلات وترتيبها تلقائياً حسب الأكثر سحباً وتعاملًا (سلوك السائق)
-  conn = get_connection()
-  cursor = conn.cursor()
-  cursor.execute("""
-      SELECT s.id, s.name, s.phone, s.address, COUNT(i.id) as order_count
-      FROM shops s
-      LEFT JOIN invoices i ON s.id = i.shop_id
-      GROUP BY s.id, s.name, s.phone, s.address
-      ORDER BY order_count DESC, s.name ASC
-  """)
-  rows = cursor.fetchall()
-  conn.close()
-
-  stores = []
-  for r in rows:
-      stores.append({
-          "id": r[0],
-          "name": r[1],
-          "phone": r[2],
-          "address": r[3],
-          "order_count": r[4]
-      })
+  # جلب المحلات مباشرة من جدول shops باستخدام الدالة المتوفرة في db_manager
+  stores = get_all_shops()
 
   warehouse_products = []
   for p in get_all_products():
@@ -244,10 +224,11 @@ def driver_screen():
         "id": p[0],
         "name": p[0],
         "price": p[1],
-        "wholesale_price": p[2],
-        "stock": p[3],
+        "wholesale_price": p[2] if len(p) > 2 else 0.0,
+        "stock": p[3] if len(p) > 3 else p[2],
         "unit": p[4] if len(p) > 4 else "قطعة",
     })
+    
   return render_template(
       "driver.html",
       trucks=TRUCKS_LIST,
