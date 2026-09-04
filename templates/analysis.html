@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}لوحة التحليلات المالية - المخبز{% endblock %}
+{% block title %}لوحة التحليلات الذكية والرسوم البيانية - المخبز{% endblock %}
 
 {% block content %}
     <!-- شريط علوي -->
@@ -13,8 +13,8 @@
             </button>
             <span class="text-2xl">📊</span>
             <div>
-                <h1 class="text-sm font-black text-amber-900">لوحة التحليلات والرسوم البيانية</h1>
-                <p class="text-[11px] text-gray-400">تتبع تطور المبيعات، توزيع الإيرادات والمصروفات، وصافي الأرباح</p>
+                <h1 class="text-sm font-black text-amber-900">لوحة التحليلات والذكاء الاصطناعي</h1>
+                <p class="text-[11px] text-gray-400">تتبع المبيعات، مؤشرات الربحية، وتصنيف العملاء باستخدام الذكاء الاصطناعي</p>
             </div>
         </div>
 
@@ -27,6 +27,38 @@
 
     <main class="max-w-7xl mx-auto p-6 space-y-6 overflow-y-auto flex-1">
         
+        <!-- ملخص مؤشرات الأداء المالية الذكية -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-amber-100 flex items-center justify-between">
+                <div>
+                    <p class="text-[11px] text-gray-400 font-bold">إجمالي الإيرادات</p>
+                    <h3 id="statTotalRev" class="text-lg font-black text-emerald-600 mt-1">0.00 EGP</h3>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">💰</div>
+            </div>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-amber-100 flex items-center justify-between">
+                <div>
+                    <p class="text-[11px] text-gray-400 font-bold">إجمالي المصروفات</p>
+                    <h3 id="statTotalExp" class="text-lg font-black text-rose-600 mt-1">0.00 EGP</h3>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-lg">📉</div>
+            </div>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-amber-100 flex items-center justify-between">
+                <div>
+                    <p class="text-[11px] text-gray-400 font-bold">صافي الربح التقديري</p>
+                    <h3 id="statNetProfit" class="text-lg font-black text-blue-600 mt-1">0.00 EGP</h3>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg">📈</div>
+            </div>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-amber-100 flex items-center justify-between">
+                <div>
+                    <p class="text-[11px] text-gray-400 font-bold">هامش الربح الكلي</p>
+                    <h3 id="statProfitMargin" class="text-lg font-black text-amber-700 mt-1">0%</h3>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center text-lg">⭐</div>
+            </div>
+        </div>
+
         <!-- فلاتر التواريخ -->
         <div class="bg-white p-4 rounded-2xl shadow-sm border border-amber-100 flex flex-wrap gap-4 items-center justify-between">
             <div class="flex items-center gap-2">
@@ -42,10 +74,9 @@
             </button>
         </div>
 
-        <!-- شبكة الرسوم البيانية -->
+        <!-- شبكة الرسوم البيانية التقليدية -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            <!-- 1. تطور المبيعات عبر الزمن (Line Chart) -->
+            <!-- 1. تطور المبيعات عبر الزمن -->
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-amber-100 md:col-span-2">
                 <h3 class="font-bold text-gray-800 text-sm mb-4 border-b pb-2 flex items-center">
                     <i class="fas fa-chart-line text-amber-700 ml-2"></i> تطور المبيعات والإيرادات عبر الزمن
@@ -55,7 +86,7 @@
                 </div>
             </div>
 
-            <!-- 2. توزيع الإيرادات أو المصروفات (Doughnut Chart) -->
+            <!-- 2. توزيع المصروفات -->
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-amber-100 flex flex-col justify-between">
                 <h3 class="font-bold text-gray-800 text-sm mb-4 border-b pb-2 flex items-center">
                     <i class="fas fa-chart-pie text-amber-700 ml-2"></i> توزيع المصروفات (خامات وعامة)
@@ -65,13 +96,56 @@
                 </div>
             </div>
 
-            <!-- 3. مقارنة صافي الربح والإجماليات (Bar Chart) -->
+            <!-- 3. مقارنة الإيرادات والمصروفات وصافي الربح -->
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-amber-100 flex flex-col justify-between">
                 <h3 class="font-bold text-gray-800 text-sm mb-4 border-b pb-2 flex items-center">
                     <i class="fas fa-balance-scale text-amber-700 ml-2"></i> مقارنة الإيرادات، المصروفات وصافي الربح
                 </h3>
                 <div class="relative h-64 w-full flex items-center justify-center">
                     <canvas id="profitBarChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- قسم أدوات الذكاء الاصطناعي والتنبؤات المتقدمة -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4">
+            
+            <!-- نموذج التنبؤ الخطي (Linear Regression Forecasting) -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-amber-100">
+                <h3 class="font-bold text-gray-800 text-sm mb-2 border-b pb-2 flex items-center justify-between">
+                    <span><i class="fas fa-robot text-amber-700 ml-2"></i> نموذج التنبؤ بالمبيعات (AI Forecasting)</span>
+                    <span class="text-[10px] bg-amber-50 text-amber-800 px-2 py-0.5 rounded-full font-bold">Linear Regression</span>
+                </h3>
+                <p class="text-[11px] text-gray-400 mb-4">توقع حركة المبيعات للأيام الخمسة القادمة بناءً على البيانات التاريخية.</p>
+                <div class="relative h-64 w-full">
+                    <canvas id="forecastChart"></canvas>
+                </div>
+            </div>
+
+            <!-- نموذج تصنيف العملاء (K-Means Clustering) -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-amber-100 flex flex-col">
+                <h3 class="font-bold text-gray-800 text-sm mb-2 border-b pb-2 flex items-center justify-between">
+                    <span><i class="fas fa-users-cog text-amber-700 ml-2"></i> تصنيف العملاء والمحلات الذكي</span>
+                    <span class="text-[10px] bg-blue-50 text-blue-800 px-2 py-0.5 rounded-full font-bold">K-Means</span>
+                </h3>
+                <p class="text-[11px] text-gray-400 mb-3">تقسيم المحلات بناءً على حجم المشتريات وعدد الطلبات (VIP، منتظمون، منخفضو النشاط).</p>
+                
+                <div class="overflow-x-auto flex-1 max-h-56">
+                    <table class="w-full text-right text-xs">
+                        <thead class="bg-amber-50 text-amber-900 sticky top-0">
+                            <tr>
+                                <th class="p-2">اسم المحل</th>
+                                <th class="p-2">إجمالي المسحوب (EGP)</th>
+                                <th class="p-2">عدد الطلبات</th>
+                                <th class="p-2">التصنيف</th>
+                            </tr>
+                        </thead>
+                        <tbody id="segmentsTableBody" class="divide-y divide-gray-100">
+                            <tr>
+                                <td colspan="4" class="p-4 text-center text-gray-400">جاري تحميل تحليل العملاء...</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -84,7 +158,7 @@
     <!-- مكتبة Chart.js للرسوم البيانية -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        let salesChart, expensesChart, profitChart;
+        let salesChart, expensesChart, profitChart, forecastChart;
 
         document.addEventListener('DOMContentLoaded', () => {
             const now = new Date();
@@ -97,6 +171,7 @@
             document.getElementById('endDate').value = localDate;
             
             loadAnalyticsData();
+            loadAiAnalytics();
         });
 
         async function loadAnalyticsData() {
@@ -149,6 +224,38 @@
             }
         }
 
+        async function loadAiAnalytics() {
+            try {
+                // 1. جلب البيانات المالية الشاملة ومؤشرات الأداء
+                const resFin = await fetch('/api/analytics/financials');
+                const dataFin = await resFin.json();
+                if (dataFin.success && dataFin.financials) {
+                    const fin = dataFin.financials;
+                    document.getElementById('statTotalRev').innerText = fin.total_revenue.toLocaleString() + " EGP";
+                    document.getElementById('statTotalExp').innerText = (fin.total_expenses + fin.total_cost).toLocaleString() + " EGP";
+                    document.getElementById('statNetProfit').innerText = fin.net_profit.toLocaleString() + " EGP";
+                    document.getElementById('statProfitMargin').innerText = fin.profit_margin + "%";
+                }
+
+                // 2. جلب بيانات نموذج التنبؤ بالمبيعات Linear Regression
+                const resFore = await fetch('/api/analytics/forecast');
+                const dataFore = await resFore.json();
+                if (dataFore.success && dataFore.historical_dates) {
+                    renderForecastChart(dataFore);
+                }
+
+                // 3. جلب بيانات تصنيف العملاء K-Means
+                const resSeg = await fetch('/api/analytics/segments');
+                const dataSeg = await resSeg.json();
+                if (dataSeg.success && dataSeg.segments) {
+                    renderSegmentsTable(dataSeg.segments);
+                }
+
+            } catch (e) {
+                console.error("خطأ في جلب بيانات الذكاء الاصطناعي:", e);
+            }
+        }
+
         function renderCharts(data) {
             const ctxLine = document.getElementById('salesLineChart').getContext('2d');
             if (salesChart) salesChart.destroy();
@@ -166,13 +273,7 @@
                         tension: 0.3
                     }]
                 },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { beginAtZero: true }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
             });
 
             const ctxDoughnut = document.getElementById('expensesDoughnutChart').getContext('2d');
@@ -203,13 +304,69 @@
                         borderWidth: 1
                     }]
                 },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { beginAtZero: true }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+            });
+        }
+
+        function renderForecastChart(data) {
+            const ctx = document.getElementById('forecastChart').getContext('2d');
+            if (forecastChart) forecastChart.destroy();
+
+            const allLabels = [...data.historical_dates, ...data.forecast_dates];
+            const historicalDataPadded = [...data.historical_sales, ...Array(data.forecast_sales.length).fill(null)];
+            const forecastDataPadded = [...Array(data.historical_sales.length - 1).fill(null), data.historical_sales[data.historical_sales.length - 1], ...data.forecast_sales];
+
+            forecastChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: allLabels,
+                    datasets: [
+                        {
+                            label: 'المبيعات الفعلية',
+                            data: historicalDataPadded,
+                            borderColor: '#b45309',
+                            backgroundColor: 'rgba(180, 83, 9, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.2
+                        },
+                        {
+                            label: 'تنبؤات الذكاء الاصطناعي',
+                            data: forecastDataPadded,
+                            borderColor: '#3b82f6',
+                            borderDash: [5, 5],
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.2
+                        }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+            });
+        }
+
+        function renderSegmentsTable(segments) {
+            const tbody = document.getElementById('segmentsTableBody');
+            tbody.innerHTML = '';
+
+            if (segments.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400">لا توجد بيانات كافية لتصنيف المحلات</td></tr>`;
+                return;
+            }
+
+            segments.forEach(s => {
+                let badgeColor = 'bg-gray-100 text-gray-800';
+                if (s.segment.includes('VIP')) badgeColor = 'bg-emerald-100 text-emerald-800 font-bold';
+                else if (s.segment.includes('منتظمون')) badgeColor = 'bg-amber-100 text-amber-800';
+                else badgeColor = 'bg-rose-100 text-rose-800';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-2 font-bold text-gray-800">${s.shop_name}</td>
+                    <td class="p-2 text-gray-600">${s.total_spent.toLocaleString()} EGP</td>
+                    <td class="p-2 text-gray-600">${s.order_count}</td>
+                    <td class="p-2"><span class="px-2 py-1 rounded-md text-[10px] ${badgeColor}">${s.segment}</span></td>
+                `;
+                tbody.appendChild(tr);
             });
         }
     </script>
