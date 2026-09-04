@@ -215,8 +215,41 @@ def pos_screen():
 @app.route("/driver")
 @permission_required("driver")
 def driver_screen():
-  # جلب المحلات مباشرة من جدول shops باستخدام الدالة المتوفرة في db_manager
-  stores = get_all_shops()
+  conn = get_connection()
+  cursor = conn.cursor()
+  
+  # استعلام ذكي وآمن لجلب المحلات وترتيبها حسب الأكثر طلباً (إن وجدت فواتير) مع جلب باقي المحلات بعدها
+  try:
+      cursor.execute("""
+          SELECT s.id, s.name, s.phone, s.address, COUNT(i.id) as order_count
+          FROM shops s
+          LEFT JOIN invoices i ON s.id = i.shop_id
+          GROUP BY s.id, s.name, s.phone, s.address
+          ORDER BY order_count DESC, s.name ASC
+      """)
+      rows = cursor.fetchall()
+  except Exception:
+      # في حال كان ربط الفواتير يعتمد على الاسم بدلاً من الـ ID
+      cursor.execute("""
+          SELECT s.id, s.name, s.phone, s.address, COUNT(i.id) as order_count
+          FROM shops s
+          LEFT JOIN invoices i ON s.name = i.shop_name
+          GROUP BY s.id, s.name, s.phone, s.address
+          ORDER BY order_count DESC, s.name ASC
+      """)
+      rows = cursor.fetchall()
+      
+  conn.close()
+
+  stores = []
+  for r in rows:
+      stores.append({
+          "id": r[0],
+          "name": r[1],
+          "phone": r[2],
+          "address": r[3],
+          "order_count": r[4]
+      })
 
   warehouse_products = []
   for p in get_all_products():
@@ -235,25 +268,6 @@ def driver_screen():
       stores=stores,
       warehouse_products=warehouse_products,
   )
-
-
-# --- صفحة المنيو لعرض الأسعار (عامة للعملاء) ---
-@app.route("/menu")
-def online_menu():
-  raw_products = get_all_products()
-  products = []
-  for p in raw_products:
-    products.append({
-        "name": p[0],
-        "price": p[1],
-        "wholesale_price": p[2] if len(p) > 2 else 0.0,
-        "stock": p[3] if len(p) > 3 else p[2],
-        "unit": p[4] if len(p) > 4 else "piece",
-        "image_path": p[5] if len(p) > 5 else "default.png",
-        "category": p[6] if len(p) > 6 else "bread",
-    })
-  return render_template("menu.html", products=products)
-
 
 # --- الصفحات المحمية بالصلاحيات ---
 @app.route("/reports")
