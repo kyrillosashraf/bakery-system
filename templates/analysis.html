@@ -1,148 +1,154 @@
 {% extends "base.html" %}
 
-{% block title %}لوحة التحليلات الذكية والرسوم البيانية - المخبز{% endblock %}
+{% block title %}لوحة التحليلات الذكية - المخبز{% endblock %}
 
 {% block content %}
-    <!-- شريط علوي -->
-    <header class="bg-white border-b border-amber-100 shadow-xs px-6 py-4 flex flex-wrap justify-between items-center gap-4">
-        <div class="flex items-center gap-3">
-            <button onclick="toggleSidebar()" class="bg-amber-100 hover:bg-amber-200 text-amber-900 p-2.5 rounded-xl transition shadow-sm flex flex-col justify-between w-10 h-10 items-center justify-center shrink-0 cursor-pointer">
-                <span class="w-5 h-0.5 bg-amber-900 rounded-full block"></span>
-                <span class="w-5 h-0.5 bg-amber-900 rounded-full block"></span>
-                <span class="w-5 h-0.5 bg-amber-900 rounded-full block"></span>
+    <!-- شريط علوي مصغر -->
+    <header class="bg-white border-b border-amber-100 shadow-xs px-4 py-3 flex flex-wrap justify-between items-center gap-3">
+        <div class="flex items-center gap-2">
+            <button onclick="toggleSidebar()" class="bg-amber-100 hover:bg-amber-200 text-amber-900 p-2 rounded-lg transition shadow-xs flex flex-col justify-between w-8 h-8 items-center justify-center shrink-0 cursor-pointer">
+                <span class="w-4 h-0.5 bg-amber-900 rounded-full block"></span>
+                <span class="w-4 h-0.5 bg-amber-900 rounded-full block"></span>
+                <span class="w-4 h-0.5 bg-amber-900 rounded-full block"></span>
             </button>
-            <span class="text-2xl">📊</span>
+            <span class="text-xl">📊</span>
             <div>
-                <h1 class="text-sm font-black text-amber-900">لوحة التحليلات والذكاء الاصطناعي</h1>
-                <p class="text-[11px] text-gray-400">تتبع المبيعات، مؤشرات الربحية، وتصنيف العملاء باستخدام الذكاء الاصطناعي</p>
+                <h1 class="text-xs font-black text-amber-900">لوحة التحليلات والذكاء الاصطناعي</h1>
+                <p class="text-[10px] text-gray-400">مؤشرات الأداء، التنبؤات وتصنيف العملاء</p>
             </div>
         </div>
 
-        <div class="flex items-center gap-3">
-            <a href="/reports" class="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-xl text-xs font-bold shadow transition flex items-center gap-1.5">
+        <div class="flex items-center gap-2">
+            <a href="/reports" class="bg-amber-700 hover:bg-amber-800 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold shadow transition flex items-center gap-1">
                 <i class="fas fa-arrow-right"></i> رجوع للتقارير
             </a>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto p-6 space-y-6 overflow-y-auto flex-1">
+    <main class="max-w-7xl mx-auto p-4 space-y-4 overflow-y-auto flex-1 text-xs">
         
-        <!-- ملخص مؤشرات الأداء المالية الذكية -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-amber-100 flex items-center justify-between">
+        <!-- ملخص مؤشرات الأداء (حجم أصغر وأنيق) -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div class="bg-white p-3 rounded-xl shadow-xs border border-amber-100 flex items-center justify-between">
                 <div>
-                    <p class="text-[11px] text-gray-400 font-bold">إجمالي الإيرادات</p>
-                    <h3 id="statTotalRev" class="text-lg font-black text-emerald-600 mt-1">0.00 EGP</h3>
+                    <p class="text-[10px] text-gray-400 font-bold">إجمالي الإيرادات</p>
+                    <h3 id="statTotalRev" class="text-sm font-black text-emerald-600 mt-0.5">0.00 EGP</h3>
                 </div>
-                <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">💰</div>
+                <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm">💰</div>
             </div>
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-amber-100 flex items-center justify-between">
+            <div class="bg-white p-3 rounded-xl shadow-xs border border-amber-100 flex items-center justify-between">
                 <div>
-                    <p class="text-[11px] text-gray-400 font-bold">إجمالي المصروفات</p>
-                    <h3 id="statTotalExp" class="text-lg font-black text-rose-600 mt-1">0.00 EGP</h3>
+                    <p class="text-[10px] text-gray-400 font-bold">إجمالي المصروفات</p>
+                    <h3 id="statTotalExp" class="text-sm font-black text-rose-600 mt-0.5">0.00 EGP</h3>
                 </div>
-                <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-lg">📉</div>
+                <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center text-sm">📉</div>
             </div>
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-amber-100 flex items-center justify-between">
+            <div class="bg-white p-3 rounded-xl shadow-xs border border-amber-100 flex items-center justify-between">
                 <div>
-                    <p class="text-[11px] text-gray-400 font-bold">صافي الربح التقديري</p>
-                    <h3 id="statNetProfit" class="text-lg font-black text-blue-600 mt-1">0.00 EGP</h3>
+                    <p class="text-[10px] text-gray-400 font-bold">صافي الربح</p>
+                    <h3 id="statNetProfit" class="text-sm font-black text-blue-600 mt-0.5">0.00 EGP</h3>
                 </div>
-                <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg">📈</div>
+                <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-sm">📈</div>
             </div>
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-amber-100 flex items-center justify-between">
+            <div class="bg-white p-3 rounded-xl shadow-xs border border-amber-100 flex items-center justify-between">
                 <div>
-                    <p class="text-[11px] text-gray-400 font-bold">هامش الربح الكلي</p>
-                    <h3 id="statProfitMargin" class="text-lg font-black text-amber-700 mt-1">0%</h3>
+                    <p class="text-[10px] text-gray-400 font-bold">هامش الربح</p>
+                    <h3 id="statProfitMargin" class="text-sm font-black text-amber-700 mt-0.5">0%</h3>
                 </div>
-                <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center text-lg">⭐</div>
+                <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center text-sm">⭐</div>
             </div>
         </div>
 
-        <!-- فلاتر التواريخ -->
-        <div class="bg-white p-4 rounded-2xl shadow-sm border border-amber-100 flex flex-wrap gap-4 items-center justify-between">
+        <!-- فلاتر التواريخ المدمجة -->
+        <div class="bg-white p-3 rounded-xl shadow-xs border border-amber-100 flex flex-wrap gap-3 items-center justify-between">
             <div class="flex items-center gap-2">
-                <span class="text-xs font-bold text-gray-700"><i class="fas fa-calendar-alt text-amber-700 ml-1"></i> من تاريخ:</span>
-                <input type="date" id="startDate" class="border border-amber-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-amber-600 cursor-pointer">
+                <span class="text-[11px] font-bold text-gray-700"><i class="fas fa-calendar-alt text-amber-700 ml-1"></i> من:</span>
+                <input type="date" id="startDate" class="border border-amber-200 rounded-lg px-2.5 py-1 text-[11px] focus:outline-none focus:border-amber-600 cursor-pointer">
             </div>
             <div class="flex items-center gap-2">
-                <span class="text-xs font-bold text-gray-700">إلى تاريخ:</span>
-                <input type="date" id="endDate" class="border border-amber-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-amber-600 cursor-pointer">
+                <span class="text-[11px] font-bold text-gray-700">إلى:</span>
+                <input type="date" id="endDate" class="border border-amber-200 rounded-lg px-2.5 py-1 text-[11px] focus:outline-none focus:border-amber-600 cursor-pointer">
             </div>
-            <button onclick="loadAnalyticsData()" class="bg-amber-700 hover:bg-amber-800 text-white px-6 py-2 rounded-xl text-xs font-bold shadow transition cursor-pointer">
-                <i class="fas fa-sync-alt ml-1"></i> تحديث التحليلات
+            <button onclick="loadAnalyticsData()" class="bg-amber-700 hover:bg-amber-800 text-white px-4 py-1.5 rounded-lg text-[11px] font-bold shadow transition cursor-pointer flex items-center gap-1">
+                <i class="fas fa-sync-alt"></i> تحديث
             </button>
         </div>
 
-        <!-- شبكة الرسوم البيانية التقليدية -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- شبكة الرسوم البيانية بحجم مضغوط -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
             <!-- 1. تطور المبيعات عبر الزمن -->
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-amber-100 md:col-span-2">
-                <h3 class="font-bold text-gray-800 text-sm mb-4 border-b pb-2 flex items-center">
+            <div class="bg-white p-4 rounded-xl shadow-xs border border-amber-100 md:col-span-2">
+                <h3 class="font-bold text-gray-800 text-xs mb-3 border-b pb-1.5 flex items-center">
                     <i class="fas fa-chart-line text-amber-700 ml-2"></i> تطور المبيعات والإيرادات عبر الزمن
                 </h3>
-                <div class="relative h-72 w-full">
+                <div class="relative h-48 w-full">
                     <canvas id="salesLineChart"></canvas>
                 </div>
             </div>
 
-            <!-- 2. توزيع المصروفات -->
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-amber-100 flex flex-col justify-between">
-                <h3 class="font-bold text-gray-800 text-sm mb-4 border-b pb-2 flex items-center">
+            <!-- 2. مقارنة الإيرادات والمصروفات والأرباح -->
+            <div class="bg-white p-4 rounded-xl shadow-xs border border-amber-100 flex flex-col justify-between">
+                <h3 class="font-bold text-gray-800 text-xs mb-3 border-b pb-1.5 flex items-center">
+                    <i class="fas fa-balance-scale text-amber-700 ml-2"></i> مقارنة الإيرادات والمصروفات وصافي الربح
+                </h3>
+                <div class="relative h-44 w-full flex items-center justify-center">
+                    <canvas id="profitBarChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 3. توزيع المصروفات -->
+            <div class="bg-white p-4 rounded-xl shadow-xs border border-amber-100 flex flex-col justify-between">
+                <h3 class="font-bold text-gray-800 text-xs mb-3 border-b pb-1.5 flex items-center">
                     <i class="fas fa-chart-pie text-amber-700 ml-2"></i> توزيع المصروفات (خامات وعامة)
                 </h3>
-                <div class="relative h-64 w-full flex items-center justify-center">
+                <div class="relative h-44 w-full flex items-center justify-center">
                     <canvas id="expensesDoughnutChart"></canvas>
                 </div>
             </div>
 
-            <!-- 3. مقارنة الإيرادات والمصروفات وصافي الربح -->
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-amber-100 flex flex-col justify-between">
-                <h3 class="font-bold text-gray-800 text-sm mb-4 border-b pb-2 flex items-center">
-                    <i class="fas fa-balance-scale text-amber-700 ml-2"></i> مقارنة الإيرادات، المصروفات وصافي الربح
-                </h3>
-                <div class="relative h-64 w-full flex items-center justify-center">
-                    <canvas id="profitBarChart"></canvas>
-                </div>
-            </div>
         </div>
 
-        <!-- قسم أدوات الذكاء الاصطناعي والتنبؤات المتقدمة -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4">
+        <!-- قسم أدوات الذكاء الاصطناعي والتنبؤات المتقدمة (أحجام مضغوطة) -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-4">
             
             <!-- نموذج التنبؤ الخطي (Linear Regression Forecasting) -->
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-amber-100">
-                <h3 class="font-bold text-gray-800 text-sm mb-2 border-b pb-2 flex items-center justify-between">
-                    <span><i class="fas fa-robot text-amber-700 ml-2"></i> نموذج التنبؤ بالمبيعات (AI Forecasting)</span>
-                    <span class="text-[10px] bg-amber-50 text-amber-800 px-2 py-0.5 rounded-full font-bold">Linear Regression</span>
-                </h3>
-                <p class="text-[11px] text-gray-400 mb-4">توقع حركة المبيعات للأيام الخمسة القادمة بناءً على البيانات التاريخية.</p>
-                <div class="relative h-64 w-full">
+            <div class="bg-white p-4 rounded-xl shadow-xs border border-amber-100">
+                <div class="flex items-center justify-between border-b pb-1.5 mb-2">
+                    <h3 class="font-bold text-gray-800 text-xs flex items-center">
+                        <i class="fas fa-robot text-amber-700 ml-2"></i> نموذج التنبؤ بالمبيعات (AI Forecasting)
+                    </h3>
+                    <span class="text-[9px] bg-amber-50 text-amber-800 px-2 py-0.5 rounded-full font-bold">Linear Regression</span>
+                </div>
+                <p class="text-[10px] text-gray-400 mb-2">توقع حركة المبيعات للأيام القادمة بناءً على البيانات التاريخية.</p>
+                <div class="relative h-44 w-full">
                     <canvas id="forecastChart"></canvas>
                 </div>
             </div>
 
             <!-- نموذج تصنيف العملاء (K-Means Clustering) -->
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-amber-100 flex flex-col">
-                <h3 class="font-bold text-gray-800 text-sm mb-2 border-b pb-2 flex items-center justify-between">
-                    <span><i class="fas fa-users-cog text-amber-700 ml-2"></i> تصنيف العملاء والمحلات الذكي</span>
-                    <span class="text-[10px] bg-blue-50 text-blue-800 px-2 py-0.5 rounded-full font-bold">K-Means</span>
-                </h3>
-                <p class="text-[11px] text-gray-400 mb-3">تقسيم المحلات بناءً على حجم المشتريات وعدد الطلبات (VIP، منتظمون، منخفضو النشاط).</p>
+            <div class="bg-white p-4 rounded-xl shadow-xs border border-amber-100 flex flex-col">
+                <div class="flex items-center justify-between border-b pb-1.5 mb-2">
+                    <h3 class="font-bold text-gray-800 text-xs flex items-center">
+                        <i class="fas fa-users-cog text-amber-700 ml-2"></i> تصنيف العملاء والمحلات الذكي
+                    </h3>
+                    <span class="text-[9px] bg-blue-50 text-blue-800 px-2 py-0.5 rounded-full font-bold">K-Means</span>
+                </div>
+                <p class="text-[10px] text-gray-400 mb-2">تقسيم المحلات بناءً على المشتريات والطلبات (VIP، منتظمون، منخفضو النشاط).</p>
                 
-                <div class="overflow-x-auto flex-1 max-h-56">
-                    <table class="w-full text-right text-xs">
+                <div class="overflow-x-auto flex-1 max-h-44">
+                    <table class="w-full text-right text-[11px]">
                         <thead class="bg-amber-50 text-amber-900 sticky top-0">
                             <tr>
-                                <th class="p-2">اسم المحل</th>
-                                <th class="p-2">إجمالي المسحوب (EGP)</th>
-                                <th class="p-2">عدد الطلبات</th>
-                                <th class="p-2">التصنيف</th>
+                                <th class="p-1.5">اسم المحل</th>
+                                <th class="p-1.5">إجمالي المسحوب</th>
+                                <th class="p-1.5">الطلبات</th>
+                                <th class="p-1.5">التصنيف</th>
                             </tr>
                         </thead>
                         <tbody id="segmentsTableBody" class="divide-y divide-gray-100">
                             <tr>
-                                <td colspan="4" class="p-4 text-center text-gray-400">جاري تحميل تحليل العملاء...</td>
+                                <td colspan="4" class="p-3 text-center text-gray-400 text-[10px]">جاري تحميل تحليل العملاء...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -226,7 +232,6 @@
 
         async function loadAiAnalytics() {
             try {
-                // 1. جلب البيانات المالية الشاملة ومؤشرات الأداء
                 const resFin = await fetch('/api/analytics/financials');
                 const dataFin = await resFin.json();
                 if (dataFin.success && dataFin.financials) {
@@ -237,14 +242,12 @@
                     document.getElementById('statProfitMargin').innerText = fin.profit_margin + "%";
                 }
 
-                // 2. جلب بيانات نموذج التنبؤ بالمبيعات Linear Regression
                 const resFore = await fetch('/api/analytics/forecast');
                 const dataFore = await resFore.json();
                 if (dataFore.success && dataFore.historical_dates) {
                     renderForecastChart(dataFore);
                 }
 
-                // 3. جلب بيانات تصنيف العملاء K-Means
                 const resSeg = await fetch('/api/analytics/segments');
                 const dataSeg = await resSeg.json();
                 if (dataSeg.success && dataSeg.segments) {
@@ -257,6 +260,17 @@
         }
 
         function renderCharts(data) {
+            // إعدادات مشتركة لتقليل حجم الارتفاع وإضافة التفاعلية
+            const commonOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { font: { size: 10 } }
+                    }
+                }
+            };
+
             const ctxLine = document.getElementById('salesLineChart').getContext('2d');
             if (salesChart) salesChart.destroy();
             salesChart = new Chart(ctxLine, {
@@ -267,13 +281,13 @@
                         label: 'إجمالي المبيعات (EGP)',
                         data: [data.totalIncome],
                         borderColor: '#b45309',
-                        backgroundColor: 'rgba(180, 83, 9, 0.1)',
-                        borderWidth: 3,
+                        backgroundColor: 'rgba(180, 83, 9, 0.08)',
+                        borderWidth: 2.5,
                         fill: true,
                         tension: 0.3
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+                options: { ...commonOptions, scales: { y: { beginAtZero: true, ticks: { font: { size: 9 } } }, x: { ticks: { font: { size: 9 } } } } }
             });
 
             const ctxDoughnut = document.getElementById('expensesDoughnutChart').getContext('2d');
@@ -281,14 +295,14 @@
             expensesChart = new Chart(ctxDoughnut, {
                 type: 'doughnut',
                 data: {
-                    labels: ['مصروفات المواد الخام', 'المصروفات العامة'],
+                    labels: ['المواد الخام', 'المصروفات العامة'],
                     datasets: [{
                         data: [data.rawExp, data.genExp],
                         backgroundColor: ['#f59e0b', '#dc2626'],
                         borderWidth: 1
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: commonOptions
             });
 
             const ctxBar = document.getElementById('profitBarChart').getContext('2d');
@@ -301,10 +315,11 @@
                         label: 'المبلغ (EGP)',
                         data: [data.totalIncome, data.totalExp, data.netProfit],
                         backgroundColor: ['#10b981', '#ef4444', '#3b82f6'],
-                        borderWidth: 1
+                        borderWidth: 1,
+                        borderRadius: 6
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+                options: { ...commonOptions, scales: { y: { beginAtZero: true, ticks: { font: { size: 9 } } }, x: { ticks: { font: { size: 9 } } } } }
             });
         }
 
@@ -325,22 +340,27 @@
                             label: 'المبيعات الفعلية',
                             data: historicalDataPadded,
                             borderColor: '#b45309',
-                            backgroundColor: 'rgba(180, 83, 9, 0.1)',
+                            backgroundColor: 'rgba(180, 83, 9, 0.08)',
                             borderWidth: 2,
                             tension: 0.2
                         },
                         {
-                            label: 'تنبؤات الذكاء الاصطناعي',
+                            label: 'تنبؤات AI',
                             data: forecastDataPadded,
                             borderColor: '#3b82f6',
-                            borderDash: [5, 5],
-                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderDash: [4, 4],
+                            backgroundColor: 'rgba(59, 130, 246, 0.08)',
                             borderWidth: 2,
                             tension: 0.2
                         }
                     ]
                 },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    scales: { y: { beginAtZero: true, ticks: { font: { size: 9 } } }, x: { ticks: { font: { size: 9 } } } },
+                    plugins: { legend: { labels: { font: { size: 9 } } } }
+                }
             });
         }
 
@@ -349,7 +369,7 @@
             tbody.innerHTML = '';
 
             if (segments.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400">لا توجد بيانات كافية لتصنيف المحلات</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-gray-400 text-[10px]">لا توجد بيانات كافية لتصنيف المحلات</td></tr>`;
                 return;
             }
 
@@ -361,10 +381,10 @@
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="p-2 font-bold text-gray-800">${s.shop_name}</td>
-                    <td class="p-2 text-gray-600">${s.total_spent.toLocaleString()} EGP</td>
-                    <td class="p-2 text-gray-600">${s.order_count}</td>
-                    <td class="p-2"><span class="px-2 py-1 rounded-md text-[10px] ${badgeColor}">${s.segment}</span></td>
+                    <td class="p-1.5 font-bold text-gray-800">${s.shop_name}</td>
+                    <td class="p-1.5 text-gray-600">${s.total_spent.toLocaleString()} EGP</td>
+                    <td class="p-1.5 text-gray-600">${s.order_count}</td>
+                    <td class="p-1.5"><span class="px-1.5 py-0.5 rounded text-[9px] ${badgeColor}">${s.segment}</span></td>
                 `;
                 tbody.appendChild(tr);
             });
