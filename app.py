@@ -215,7 +215,29 @@ def pos_screen():
 @app.route("/driver")
 @permission_required("driver")
 def driver_screen():
-  stores = get_all_shops()
+  # جلب المحلات وترتيبها تلقائياً حسب الأكثر سحباً وتعاملًا (سلوك السائق)
+  conn = get_connection()
+  cursor = conn.cursor()
+  cursor.execute("""
+      SELECT s.id, s.name, s.phone, s.address, COUNT(i.id) as order_count
+      FROM shops s
+      LEFT JOIN invoices i ON s.id = i.shop_id
+      GROUP BY s.id, s.name, s.phone, s.address
+      ORDER BY order_count DESC, s.name ASC
+  """)
+  rows = cursor.fetchall()
+  conn.close()
+
+  stores = []
+  for r in rows:
+      stores.append({
+          "id": r[0],
+          "name": r[1],
+          "phone": r[2],
+          "address": r[3],
+          "order_count": r[4]
+      })
+
   warehouse_products = []
   for p in get_all_products():
     warehouse_products.append({
