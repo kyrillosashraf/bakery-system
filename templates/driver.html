@@ -219,7 +219,7 @@
             let container = document.getElementById('truck-inventory-list');
             
             if (!truckId) {
-                container.innerHTML = `<p class="text-xs text-gray-400 text-center py-20">اختر العربية لعرض عهدتها الحالية</p>`;
+                container.innerHTML = '<p class="text-xs text-gray-400 text-center py-20">اختر العربية لعرض عهدتها الحالية</p>';
                 currentTruckInventory = {};
                 return;
             }
@@ -232,7 +232,7 @@
                     container.innerHTML = '';
                     
                     if (Object.keys(currentTruckInventory).length === 0) {
-                        container.innerHTML = `<p class="text-xs text-gray-400 text-center py-20">لا توجد بضاعة مسجلة في عهدة هذه العربية حالياً</p>`;
+                        container.innerHTML = '<p class="text-xs text-gray-400 text-center py-20">لا توجد بضاعة مسجلة في عهدة هذه العربية حالياً</p>';
                         return;
                     }
 
@@ -578,7 +578,7 @@
                     let grandTotal = 0;
 
                     if (data.invoices.length === 0) {
-                        container.innerHTML = `<p class="text-xs text-gray-400 text-center py-10">لا توجد مبيعات مسجلة للمحلات اليوم</p>`;
+                        container.innerHTML = '<p class="text-xs text-gray-400 text-center py-10">لا توجد مبيعات مسجلة للمحلات اليوم</p>';
                         document.getElementById('daily-grand-total').innerText = '0.00 EGP';
                         document.getElementById('dailyReportModal').classList.remove('hidden');
                         return;
@@ -636,7 +636,7 @@
                     let storeInvoices = data.invoices.filter(inv => String(inv.store_name).trim() === String(storeName).trim());
 
                     if (storeInvoices.length === 0) {
-                        container.innerHTML = `<p class="text-xs text-gray-400 text-center py-10">لا توجد مبيعات أو فواتير مسجلة لهذا المحل اليوم</p>`;
+                        container.innerHTML = '<p class="text-xs text-gray-400 text-center py-10">لا توجد مبيعات أو فواتير مسجلة لهذا المحل اليوم</p>';
                         document.getElementById('store-account-grand-total').innerText = '0.00 EGP';
                         document.getElementById('storeAccountModal').classList.remove('hidden');
                         return;
@@ -666,7 +666,6 @@
                     });
 
                     document.getElementById('store-account-grand-total').innerText = storeGrandTotal.toFixed(2) + ' EGP';
-                    document.getElementById('storeAccountModal').classList.add('flex');
                     document.getElementById('storeAccountModal').classList.remove('hidden');
                 } else {
                     showToast(data.error, 'error');
@@ -674,9 +673,8 @@
             });
         }
 
-        function storeAccountModalClosed() {
+        function closeStoreAccountModal() {
             document.getElementById('storeAccountModal').classList.add('hidden');
         }
     </script>
 {% endblock %}
-```[cite: 4]
